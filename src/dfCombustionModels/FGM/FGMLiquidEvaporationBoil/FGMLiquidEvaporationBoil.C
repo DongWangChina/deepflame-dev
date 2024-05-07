@@ -186,12 +186,19 @@ void Foam::FGMLiquidEvaporationBoil<CloudType>::calculate
         // surface molar fraction - Raoult's Law
         const scalar Xs = X[lid]*pSat/pc;
 
+        scalar Wi_c = this->owner().thermo().carrier().Wi(gid);
+        scalar Yi_c = this->owner().thermo().carrier().Y()[gid][celli];
 
-        // if (Xc*pc > pSat)
-        // {
-        //     // saturated vapour - no phase change
-        // }
-        // else
+        scalar Xc = Yi_c * W_[celli] / Wi_c;
+
+        // Info << "FGMLiquidEvaporationBoil -- Wi is :" << Wi_c << ", Yi is:" 
+        //     << Yi_c << ", Xc = " << Xc << endl;
+
+        if (Xc*pc > pSat)
+        {
+            // saturated vapour - no phase change
+        }
+        else
         {
             // vapour diffusivity [m2/s]
             const scalar Dab = this->liquids_.properties()[lid].D(ps, Ts);

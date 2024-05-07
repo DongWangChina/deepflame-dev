@@ -38,7 +38,7 @@ Foam::combustionModels::baseFGM<ReactionThermo>::baseFGM
 )
 :
     laminar<ReactionThermo>(modelType, thermo, turb, combustionProperties),
-    // fvOptions(fv::options::New(this->mesh())),
+    fvOptions(fv::options::New(this->mesh())),
     buffer_(this->coeffs().lookupOrDefault("buffer", false)),
     scaledPV_(this->coeffs().lookupOrDefault("scaledPV", false)),
     incompPref_(this->coeffs().lookupOrDefault("incompPref", -10.0)),
@@ -46,6 +46,9 @@ Foam::combustionModels::baseFGM<ReactionThermo>::baseFGM
     combustion_(this->coeffs().lookupOrDefault("combustion", false)),
     solveEnthalpy_(this->coeffs().lookupOrDefault("solveEnthalpy", false)),
     flameletT_(this->coeffs().lookupOrDefault("flameletT", false)),
+    solveYiEqn_(this->coeffs().lookupOrDefault("solveYiEqn", false)),
+    droplet_stat_(this->coeffs().lookupOrDefault("droplet_stat", false)),
+    droplet_stat_startTime_(this->coeffs().lookupOrDefault("droplet_stat_startTime", 0.0)),
     tablePath_(this->coeffs().lookup("tablePath")),
     psi_(const_cast<volScalarField&>(dynamic_cast<rhoThermo&>(thermo).psi())),
     Wt_ 
@@ -303,6 +306,45 @@ Foam::combustionModels::baseFGM<ReactionThermo>::baseFGM
         this->mesh(),  
         dimensionedScalar("Zcvar_s",dimensionSet(0,0,0,0,0,0,0),0.0) 
     ),
+    dropletVF_
+    (
+        IOobject
+        (
+            "dropletVF",
+            this->mesh().time().timeName(),
+            this->mesh(),
+            IOobject::READ_IF_PRESENT,
+            IOobject::AUTO_WRITE
+        ),
+        this->mesh(),
+        dimensionedScalar("dropletVF", dimensionSet(0, 4, -1, 0, 0, 0, 0), 0.0)
+    ),
+    dropletU_
+    (
+        IOobject
+        (
+            "dropletU",
+            this->mesh().time().timeName(),
+            this->mesh(),
+            IOobject::READ_IF_PRESENT,
+            IOobject::AUTO_WRITE
+        ),
+        this->mesh(),
+        dimensionedVector(dimensionSet(0, 1, -1, 0, 0, 0, 0), vector::zero)
+    ),
+    dropletCounter_
+    (
+        IOobject
+        (
+            "dropletCounter",
+            this->mesh().time().timeName(),
+            this->mesh(),
+            IOobject::READ_IF_PRESENT,
+            IOobject::AUTO_WRITE
+        ),
+        this->mesh(),
+        dimensionedScalar("dropletCounter", dimensionSet(0, 0, 0, 0, 0, 0, 0), 0.0)
+    ),
     cOmega_c_(omega_c_),
     ZOmega_c_(omega_c_), 
     WtCells_ (Wt_.primitiveFieldRef()),
@@ -494,6 +536,17 @@ void Foam::combustionModels::baseFGM<ReactionThermo>::transport()
             fields_,
             phi_,
             this->mesh().divScheme("div(phi,scalarUW)") 
+        )
+    );
+
+    tmp<fv::convectionScheme<scalar>> mvConvection
+    (
+        fv::convectionScheme<scalar>::New
+        (
+            this->mesh(),
+            fields_,
+            phi_,
+            this->mesh().divScheme("div(phi,Yi_h)")
         )
     );
 
@@ -732,6 +785,78 @@ void Foam::combustionModels::baseFGM<ReactionThermo>::transport()
             }
             HEqn.solve();
         }
+
+        if ( (!this->omega_YiNames_base_.empty()) 
+            and this->solveYiEqn_ )
+        {
+
+            forAll(omega_Yi_index_, i)
+            {
+                volScalarField& Yi = Y_[omega_Yi_index_[i]];
+
+                Info << "Solve Spray Y_" << omega_YiNames_base_[i] << endl;
+
+                fvScalarMatrix YiEqn
+                (
+                    fvm::ddt(rho_, Yi)
+                    + (
+                        buffer_
+                        ? scalarUWConvection->fvmDiv(phi_, Yi)
+                        : mvConvection->fvmDiv(phi_, Yi)
+                    )
+                    -fvm::laplacian( mut/Sct_ + mu/Sc_, Yi)
+                    - omega_Yis_[i]
+                    + fvOptions(rho_, Yi)
+                    ==
+                    spray.SYi(omega_Yi_index_[i], Yi)  
+                );  
+                fvOptions.correct(Yi);
+                
+                if(relaxation_)
+                {
+                    YiEqn.relax();
+                }
+                YiEqn.solve("Yi");
+
+                Yi.min(1.0);
+                Yi.max(0.0); 
+            }
+                    
+        }
+
+        if (droplet_stat_ && this->mesh().time().value() >= droplet_stat_startTime_)
+        {
+            Info << "droplet statistic"<< endl;
+            forAllConstIter(basicSprayCloud, spray, iter)
+            {
+                const auto& droplet = iter();
+                label cellId = spray.mesh().findCell(droplet.position());
+
+                dropletCounter_[cellId] += 1.0;
+                scalar beta = 1.0 / dropletCounter_[cellId];
+
+                dropletVF_[cellId] = (1.0 - beta)*dropletVF_[cellId] 
+                                    + beta* ( M_PI / 6.0 * pow3(droplet.d()) * mag(droplet.U()) );
+                dropletU_[cellId] = (1.0 - beta)*dropletU_[cellId] + beta* droplet.U();
+
+                // std::cout << "droplet statistic: dropletU = " << droplet.U()[0] << ", d = "<< droplet.d() << std::endl;
+            }
+
+            volScalarField::Boundary& dropletVFBF = this->dropletVF_.boundaryFieldRef();
+            volVectorField::Boundary& dropletUBF = this->dropletU_.boundaryFieldRef();
+            forAll(this->dropletVF_.boundaryFieldRef(), patchi)
+            {
+                fvPatchScalarField& pdropletVF = dropletVFBF[patchi];
+                fvPatchVectorField& pdropletU = dropletUBF[patchi];
+
+                forAll(pdropletVF, facei)
+                {
+                    label cellID = this->mesh().boundary()[patchi].faceCells()[facei];
+                    pdropletVF[facei] = this->dropletVF_[cellID];
+                    pdropletU[facei] = this->dropletU_[cellID];
+                }
+            }
+        }
     }
     else  // not spray
     {
@@ -900,6 +1025,41 @@ void Foam::combustionModels::baseFGM<ReactionThermo>::transport()
                 HEqn.relax();
             }
             HEqn.solve();
+        }
+
+
+        if ( (!this->omega_YiNames_base_.empty()) 
+            and this->solveYiEqn_ )
+        {
+
+            forAll(omega_Yi_index_, i)
+            {
+                volScalarField& Yi = Y_[omega_Yi_index_[i]];
+
+                fvScalarMatrix YiEqn
+                (
+                    fvm::ddt(rho_, Yi)
+                    + (
+                        buffer_
+                        ? scalarUWConvection->fvmDiv(phi_, Yi)
+                        : mvConvection->fvmDiv(phi_, Yi)
+                    )
+                    -fvm::laplacian( mut/Sct_ + mu/Sc_, Yi)
+                    - omega_Yis_[i]
+                    + fvOptions(rho_, Yi)
+                );  
+                fvOptions.correct(Yi);
+                
+                if(relaxation_)
+                {
+                    YiEqn.relax();
+                }
+                YiEqn.solve("Yi");
+
+                Yi.min(1.0);
+                Yi.max(0.0); 
+            }
+                    
         }
     }
 

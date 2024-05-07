@@ -277,7 +277,7 @@ void Foam::combustionModels::flareFGM<ReactionThermo>::retrieval()
                         ? (this->chi_ZCells_[celli] + this->chi_ZfltdCells_[celli])*this->cCells_[celli]
                             *this->lookup3d(this->NH,this->h_Tb3,hLoss,this->NZ,this->z_Tb3,this->ZCells_[celli],
                                         this->NGZ,this->gz_Tb3,gz,this->d2Yeq_Tb2)
-                            + 2*this->chi_ZcCells_[celli]*this->lookup3d(this->NH,this->h_Tb3,hLoss,
+                            + 2.0*this->chi_ZcCells_[celli]*this->lookup3d(this->NH,this->h_Tb3,hLoss,
                                                     this->NZ,this->z_Tb3,this->ZCells_[celli],
                                                     this->NGZ,this->gz_Tb3,gz,this->d1Yeq_Tb2)
                         : 0.0
@@ -298,7 +298,7 @@ void Foam::combustionModels::flareFGM<ReactionThermo>::retrieval()
                         ? (  this->chi_ZCells_[celli]*this->cCells_[celli]
                             *this->lookup3d(this->NH,this->h_Tb3,hLoss,this->NZ,this->z_Tb3,this->ZCells_[celli],
                                         this->NGZ,this->gz_Tb3,gz,this->d2Yeq_Tb2)
-                            + 2*this->chi_ZcCells_[celli]*this->lookup3d(this->NH,this->h_Tb3,hLoss,
+                            + 2.0*this->chi_ZcCells_[celli]*this->lookup3d(this->NH,this->h_Tb3,hLoss,
                                                         this->NZ,this->z_Tb3,this->ZCells_[celli],
                                                         this->NGZ,this->gz_Tb3,gz,this->d1Yeq_Tb2)  )
                         : 0.0
@@ -374,15 +374,33 @@ void Foam::combustionModels::flareFGM<ReactionThermo>::retrieval()
         // -------------------- omega Yis begin ------------------------------
         if (!this->omega_YiNames_base_.empty())
         {
-            forAll(this->omega_YiNames_base_, speciesI)
+            if(tableSolver::scaledPV_)   
             {
-                this->omega_Yis_[speciesI].primitiveFieldRef()[celli] = this->lookup6d(this->NH,this->h_Tb3,hLoss,
-                                        this->NZ,this->z_Tb3,this->ZCells_[celli],
-                                        this->NC,this->c_Tb3,cNorm,
-                                        this->NGZ,this->gz_Tb3,gz,
-                                        this->NGC,this->gc_Tb3,gc,
-                                        this->NZC,this->gzc_Tb3,gcz,
-                                        this->tableValues_[this->NS-this->NYomega+speciesI]);  
+                forAll(this->omega_YiNames_base_, speciesI)
+                {
+                    this->omega_Yis_[speciesI].primitiveFieldRef()[celli] = this->lookup6d(this->NH,this->h_Tb3,hLoss,
+                                            this->NZ,this->z_Tb3,this->ZCells_[celli],
+                                            this->NC,this->c_Tb3,cNorm,
+                                            this->NGZ,this->gz_Tb3,gz,
+                                            this->NGC,this->gc_Tb3,gc,
+                                            this->NZC,this->gzc_Tb3,gcz,
+                                            this->tableValues_[this->NS-this->NYomega+speciesI])
+                                        *this->rho_[celli];
+                }
+            }
+            else
+            {
+                forAll(this->omega_YiNames_base_, speciesI)
+                {
+                    this->omega_Yis_[speciesI].primitiveFieldRef()[celli] = this->lookup6d(this->NH,this->h_Tb3,hLoss,
+                                            this->NZ,this->z_Tb3,this->ZCells_[celli],
+                                            this->NC,this->c_Tb3,cNorm,
+                                            this->NGZ,this->gz_Tb3,gz,
+                                            this->NGC,this->gc_Tb3,gc,
+                                            this->NZC,this->gzc_Tb3,gcz,
+                                            this->tableValues_[this->NS-1-this->NYomega+speciesI])
+                                        *this->rho_[celli];
+                }
             }
         }
         // -------------------- omega Yis end ------------------------------
@@ -697,16 +715,35 @@ void Foam::combustionModels::flareFGM<ReactionThermo>::retrieval()
             // -------------------- omega Yis begin ------------------------------
             if (!this->omega_YiNames_base_.empty())
             {
-                forAll(this->omega_YiNames_base_, speciesI)
+                if(tableSolver::scaledPV_)
                 {
-                    this->omega_Yis_[speciesI].boundaryFieldRef()[patchi][facei]  = this->lookup6d(this->NH,this->h_Tb3,hLoss,
-                                            this->NZ,this->z_Tb3,pZ[facei],
-                                            this->NC,this->c_Tb3,cNorm,
-                                            this->NGZ,this->gz_Tb3,gz,
-                                            this->NGC,this->gc_Tb3,gc,
-                                            this->NZC,this->gzc_Tb3,gcz,
-                                            this->tableValues_[this->NS-this->NYomega+speciesI]);
+                    forAll(this->omega_YiNames_base_, speciesI)
+                    {
+                        this->omega_Yis_[speciesI].boundaryFieldRef()[patchi][facei]  = this->lookup6d(this->NH,this->h_Tb3,hLoss,
+                                                this->NZ,this->z_Tb3,pZ[facei],
+                                                this->NC,this->c_Tb3,cNorm,
+                                                this->NGZ,this->gz_Tb3,gz,
+                                                this->NGC,this->gc_Tb3,gc,
+                                                this->NZC,this->gzc_Tb3,gcz,
+                                                this->tableValues_[this->NS-this->NYomega+speciesI])
+                                            *prho_[facei];  
+                    }
                 }
+                else
+                {
+                    forAll(this->omega_YiNames_base_, speciesI)
+                    {
+                        this->omega_Yis_[speciesI].boundaryFieldRef()[patchi][facei]  = this->lookup6d(this->NH,this->h_Tb3,hLoss,
+                                                this->NZ,this->z_Tb3,pZ[facei],
+                                                this->NC,this->c_Tb3,cNorm,
+                                                this->NGZ,this->gz_Tb3,gz,
+                                                this->NGC,this->gc_Tb3,gc,
+                                                this->NZC,this->gzc_Tb3,gcz,
+                                                this->tableValues_[this->NS-1-this->NYomega+speciesI])
+                                            *prho_[facei];  
+                    }
+                }
+
             }
             // -------------------- omega Yis end ------------------------------
         } 

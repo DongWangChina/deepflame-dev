@@ -22,7 +22,7 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Class
-    Foam::combustionModels::baseFGM
+    Foam::combustionModels::baseFSD
 
 Description
     Partially stirred reactor turbulent combustion model.
@@ -32,17 +32,17 @@ Description
     to scale the turbulence mixing time scale.
 
 SourceFiles
-    baseFGM.C
+    baseFSD.C
 
 \*---------------------------------------------------------------------------*/
 
-#ifndef baseFGM_H
-#define baseFGM_H
+#ifndef baseFSD_H
+#define baseFSD_H
 
 #include "../laminar/laminar.H"
 #include "uniformDimensionedFields.H"
 #include "CanteraMixture.H"
-#include "fvOptions.H"
+// #include "fvOptions.H"
 #include "LESfilter.H"
 //#include "basicThermo.H"
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
@@ -53,22 +53,18 @@ namespace combustionModels
 {
 
 /*---------------------------------------------------------------------------*\
-                            Class baseFGM Declaration
+                            Class baseFSD Declaration
 \*---------------------------------------------------------------------------*/
 
 template<class ReactionThermo>
-class baseFGM
+class baseFSD
 :
     public laminar<ReactionThermo>
 {
     // Protected Data
  protected:
-    fv::options& fvOptions; 
-    //- buffer switch
-    Switch buffer_;
 
-    //- scaled PV switch
-    Switch scaledPV_;
+    Switch buffer_;
 
     //- incompressible pressure reference
     scalar incompPref_;
@@ -85,16 +81,25 @@ class baseFGM
     //- T-lookup switch
     Switch flameletT_;
 
-    //- Yi Equation solve witch
-    Switch solveYiEqn_;
-
-    Switch droplet_stat_;
-    scalar droplet_stat_startTime_;
-
     word tablePath_;
 
     //- psi=\rho/p
     volScalarField& psi_;
+
+    //- fluid density
+    volScalarField& rho_;
+    volScalarField& rho_inRhoThermo_;
+
+    //- fluid pressure
+    const volScalarField& p_;
+
+    //- fluid temperature
+    volScalarField& T_;
+
+    PtrList<volScalarField>& Y_;
+
+    //- fluid velocity
+    const volVectorField& U_;    
 
     //- air mass/mole(28.96kg/mol)
     volScalarField Wt_;
@@ -104,6 +109,8 @@ class baseFGM
 
     //- mixture fraction Z
     volScalarField Z_;
+
+    volScalarField Y_fuel_;
 
     //- mixture fraction variance Zvar
     volScalarField Zvar_;    
@@ -117,44 +124,89 @@ class baseFGM
     //- progress variable c
     volScalarField c_;
 
-    //- progress variable c variance
-    volScalarField cvar_;
+    //- flame surface density
+    volScalarField fsd_;
 
-    //- co-variance Z, c
-    volScalarField Zcvar_;
+    //- flame surface density
+    volScalarField SdA_;
+
+    //- strain factor characterizing the effects of flame straining on the flame speed
+    volScalarField I_s_FSD_;
+
+    //- laminar flame speed
+    volScalarField SL0_FSD_;
+
+    //- termal thickness of the unstrained laminar flame
+    volScalarField thermoThickness_L0_FSD_;
+
+    //- Kalovitz factor
+    volScalarField Ka_;
+
+    //- temp field to save Ka_, s^{-1}
+    volScalarField Ka_temp_;
+
+    volScalarField Ka_temp1_;
+    volScalarField Ka_temp2_;
+    volScalarField Ka_temp3_;
 
     //- chemistry source reaction rate(kg*m^{-3}*s^{-1})
     volScalarField omega_c_;
 
-    //- progress variable dissipation rate (s^{-1})
-    volScalarField chi_c_;
+    volScalarField omega_c_chiZ_;
+
+    volScalarField omega_Y_fuel_;
 
     //- mixture fraction dissipation rate (s^{-1})
     volScalarField chi_Z_; 
 
-    //-covariance Z-c dissipation rate (s^{-1})
-    volScalarField chi_Zc_;
+    volScalarField chi_Zc_; 
 
     //- filtered SDR of mixture fraction
     volScalarField chi_Zfltd_; 
 
-    //- betac for LES
-    volScalarField betac_;
-
     volScalarField He_s_;
-    volScalarField Zvar_s_; 
     volScalarField c_s_;
-    volScalarField cvar_s_;
-    volScalarField Zcvar_s_;
+    volScalarField Zvar_s_;
 
-    volScalarField dropletVF_;
-    volVectorField dropletU_;
-    volScalarField dropletCounter_;
+    //- unburnt density
+    volScalarField rho_u_;
 
-    //- copy of omega_c_
-    volScalarField cOmega_c_;
-    volScalarField ZOmega_c_;
+    //- filter size
+    volScalarField delta_;
 
+    //- efficiency function
+    volScalarField gamma_k_;
+
+    //- the 1st source term in FSD equation, representing the flame curvature effects
+    volScalarField source_fsd_FCE1_;
+
+    //- the 2nd source term in FSD equation, representing the flame curvature effects
+    volScalarField source_fsd_FCE2_;
+
+    //- source term in FSD equation, representing the flame propagation
+    volScalarField source_fsd_flaProp_;
+
+    //- source term in FSD equation, representing the strain-rate effects
+    volScalarField source_fsd_SRE1_;
+    volScalarField source_fsd_SRE2_;
+
+    //- flux term for FSD equation
+    surfaceScalarField phiFSD_;
+
+    //- unit tensor
+    volTensorField IField_;
+
+    //- unit tensor with m^{-1}
+    volScalarField IField_m_1_;
+
+    //- unit tensor with m
+    volScalarField IField_m1_;
+
+    //- unit tensor with m/s
+    volScalarField IField_m1_s_1_;
+
+    //- modeled surface-averaged normal vector
+    volVectorField n_FSD_;
 
     //- internal fields
     scalarField& WtCells_; 
@@ -164,62 +216,45 @@ class baseFGM
     scalarField& HCells_;
     scalarField& HfCells_;
     scalarField& cCells_;
-    scalarField& cvarCells_;
-    scalarField& ZcvarCells_;
+    scalarField& fsdCells_;
+    scalarField& KaCells_;
     scalarField& omega_cCells_;
-    scalarField& cOmega_cCells_;
-    scalarField& ZOmega_cCells_;
-    scalarField& chi_cCells_;
+    scalarField& omega_c_chiZCells_;
+    scalarField& omega_Y_fuelCells_;
     scalarField& chi_ZCells_;
     scalarField& chi_ZcCells_;
+    scalarField& chi_ZfltdCells_;
+    scalarField& rho_uCells_;
+    scalarField& SL0_FSDCells_;
+    scalarField& thermoThickness_L0_FSDCells_;
+    scalarField& I_s_FSDCells_;
+    vectorField& n_FSDCells_;
+    scalarField& gamma_kCells_;
+    scalarField& source_fsd_FCE2Cells_;
+    scalarField& SdACells_;
+    scalarField& Y_fuelCells_;
 
     //- filter size
     scalarField deltaCells_; 
-
-    scalarField& chi_ZfltdCells_;
-
-    scalarField& betacCells_; 
 
     //- max and min Z
     scalar ZMax_;
     scalar ZMin_;
 
+    //- max and min c
+    scalar cMax_;
+    scalar cMin_;
+
     //- max and min Z variance
     scalar ZvarMax_;
     scalar ZvarMin_;
 
-    //- max and min c
-    scalar cMax_;
-    scalar cMin_;
-    scalar Ycmaxall_;
-
-    //- max and min c variance
-    scalar cvarMax_;
-    scalar cvarMin_;
-
-    //- max and min Zc variance 
-    scalar ZcvarMax_;
-    scalar ZcvarMin_;   
-
     //- max and min T
     scalar TMax_;
-    scalar TMin_;
+    scalar TMin_; 
 
-    //- fluid density
-     volScalarField& rho_;
-    //- fluid density
-     volScalarField& rho_inRhoThermo_;
-
-    //- fluid pressure
-    const volScalarField& p_;
-
-    //- fluid temperature
-    volScalarField& T_;
-
-    PtrList<volScalarField>& Y_;
-
-    //- fluid velocity
-    const volVectorField& U_;     
+    //- error limitation for FSD
+    scalar small_FSD_;
 
     // pressure derivate
     const volScalarField& dpdt_;
@@ -252,40 +287,39 @@ class baseFGM
     //- laminar schmidt number
     scalar Sc_;
 
-    //- index for omega speices
-    labelList omega_Yi_index_;
+    //- FSD Schmidt number
+    scalar Sc_fsd_;
 
-    wordList omega_YiNames_base_;
+    //- FSD model constants
+    scalar beta_FSD_;
 
-    // //- reaction rate for fuel species
-    PtrList<volScalarField> omega_Yis_;
+    scalar phi_fac_FSD_;
 
     scalar bufferTime_;
  
     //- relaxation switch
     Switch relaxation_;
 
+    //- if SdA consider the flame curcature term
+    Switch curv_SdA_;  
+
     //- Dpdt switch 
     Switch DpDt_;    
-
-    multivariateSurfaceInterpolationScheme<scalar>::fieldTable fields_;
 
     //- LES
     //- if in LES mode
     Switch isLES_;
 
-    //SGS
-    volScalarField magUPrime_;
-    scalarField& magUPrimeCells_; 
+    multivariateSurfaceInterpolationScheme<scalar>::fieldTable fields_;
 
  public:
     //- Runtime type information
-    TypeName("baseFGM");
+    TypeName("baseFSD");
 
     // Constructors
 
         //- Construct from components
-        baseFGM
+        baseFSD
         (
             const word& modelType,
             ReactionThermo& thermo,
@@ -295,7 +329,7 @@ class baseFGM
 
 
     //- Destructor
-    virtual ~baseFGM();
+    virtual ~baseFSD();
 
 
     // Member Functions
@@ -305,9 +339,6 @@ class baseFGM
 
         //- initialize flame kernel 
         virtual void initialiseFalmeKernel();        
-
-        //- return mag SGS
-        virtual void magUPrime();
 
         //- reaturn buffer_
         virtual bool buffer();
@@ -323,7 +354,7 @@ class baseFGM
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 #ifdef NoRepository
-    #include "baseFGM.C"
+    #include "baseFSD.C"
 #endif
 
 
