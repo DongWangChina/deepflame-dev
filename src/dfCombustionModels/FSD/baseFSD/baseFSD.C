@@ -114,6 +114,18 @@ Foam::combustionModels::baseFSD<ReactionThermo>::baseFSD
         ),
         this->mesh()
     ),
+    cvar_
+    (
+        IOobject
+        (
+            "cvar",
+            this->mesh().time().timeName(),
+            this->mesh(),
+            IOobject::MUST_READ,
+            IOobject::AUTO_WRITE
+        ),
+        this->mesh()
+    ),  
     He_
     (
         IOobject
@@ -334,7 +346,20 @@ Foam::combustionModels::baseFSD<ReactionThermo>::baseFSD
         ),
         this->mesh(),  
         dimensionedScalar("chi_Z",dimensionSet(0,0,-1,0,0,0,0),0.0) 
-    ),    
+    ),  
+    chi_c_
+    (
+        IOobject
+        (
+            "chi_c",
+            this->mesh().time().timeName(),
+            this->mesh(),
+            IOobject::NO_READ,
+            IOobject::AUTO_WRITE
+        ),
+        this->mesh(),  
+        dimensionedScalar("chi_c",dimensionSet(0,0,-1,0,0,0,0),0.0)
+    ),   
     chi_Zc_
     (
         IOobject
@@ -361,6 +386,19 @@ Foam::combustionModels::baseFSD<ReactionThermo>::baseFSD
         this->mesh(),  
         dimensionedScalar("chi_Zfltd",dimensionSet(0,0,-1,0,0,0,0),0)
     ),
+    betac_  
+    (
+        IOobject
+        (
+            "betac",
+            this->mesh().time().timeName(),
+            this->mesh(),
+            IOobject::NO_READ,
+            IOobject::AUTO_WRITE
+        ),
+        this->mesh(),  
+        dimensionedScalar("betac",dimensionSet(0,0,0,0,0,0,0),4.0) 
+    ), 
     He_s_
     (
         IOobject
@@ -581,21 +619,26 @@ Foam::combustionModels::baseFSD<ReactionThermo>::baseFSD
         this->mesh(),
         dimensionedVector(dimensionSet(0, 0, 0, 0, 0, 0, 0), vector::zero)
     ),
+    cOmega_c_(omega_c_),
     WtCells_ (Wt_.primitiveFieldRef()),
     CpCells_ (Cp_.primitiveFieldRef()),
     ZCells_(Z_.primitiveFieldRef()),
     ZvarCells_(Zvar_.primitiveFieldRef()), 
+    cvarCells_(cvar_.primitiveFieldRef()), 
     HCells_(He_.primitiveFieldRef()),
     HfCells_(Hf_.primitiveFieldRef()),
     cCells_(c_.primitiveFieldRef()),
     fsdCells_(fsd_.primitiveFieldRef()),
     KaCells_(Ka_.primitiveFieldRef()),
     omega_cCells_(omega_c_.primitiveFieldRef()), 
+    cOmega_cCells_(cOmega_c_.primitiveFieldRef()),
     omega_c_chiZCells_(omega_c_chiZ_.primitiveFieldRef()), 
     omega_Y_fuelCells_(omega_Y_fuel_.primitiveFieldRef()), 
     chi_ZCells_(chi_Z_.primitiveFieldRef()),
+    chi_cCells_(chi_c_.primitiveFieldRef()),
     chi_ZcCells_(chi_Zc_.primitiveFieldRef()),
     chi_ZfltdCells_(chi_Zfltd_.primitiveFieldRef()),  
+    betacCells_(betac_.primitiveFieldRef()),   
     rho_uCells_(rho_u_.primitiveFieldRef()),
     SL0_FSDCells_(SL0_FSD_.primitiveFieldRef()),
     thermoThickness_L0_FSDCells_(thermoThickness_L0_FSD_.primitiveFieldRef()),
@@ -611,6 +654,8 @@ Foam::combustionModels::baseFSD<ReactionThermo>::baseFSD
     cMin_(0.0),
     ZvarMax_(0.25),
     ZvarMin_(0.0),
+    cvarMax_(0.25),
+    cvarMin_(0.0),
     TMax_(this->coeffs().lookupOrDefault("TMax", 5000.0)),
     TMin_(this->coeffs().lookupOrDefault("TMin", 200.0)),
     small_FSD_(this->coeffs().lookupOrDefault("small_FSD_", 1.0e-4)),
@@ -632,7 +677,9 @@ Foam::combustionModels::baseFSD<ReactionThermo>::baseFSD
     bufferTime_(this->coeffs().lookupOrDefault("bufferTime", 0.0)),
     relaxation_(this->coeffs().lookupOrDefault("relaxation", false)),
     curv_SdA_(this->coeffs().lookupOrDefault("curv_SdA", false)),
-    DpDt_(this->coeffs().lookupOrDefault("DpDt", false))
+    DpDt_(this->coeffs().lookupOrDefault("DpDt", false)),
+    magUPrime_(U_.component(vector::X)),
+    magUPrimeCells_(magUPrime_.primitiveFieldRef())
 {
     if(this->incompPref_ < 0.0)  //local pressure used to calculate EOS
     {
@@ -679,7 +726,8 @@ Foam::combustionModels::baseFSD<ReactionThermo>::baseFSD
     // add fields
     fields_.add(Z_);
     fields_.add(Zvar_);
-    fields_.add(c_);     
+    fields_.add(c_); 
+    fields_.add(cvar_);    
     fields_.add(fsd_);  
     fields_.add(He_);  
     fields_.add(Y_fuel_);  
@@ -1004,7 +1052,32 @@ void Foam::combustionModels::baseFSD<ReactionThermo>::transport()
     ZvarEqn.solve();
 
     Zvar_.min(ZvarMax_);
-    Zvar_.max(ZvarMin_);  
+    Zvar_.max(ZvarMin_); 
+
+
+    // Solve the progress variable variance transport equation
+    fvScalarMatrix cvarEqn
+    (
+        fvm::ddt(rho_,cvar_)
+        +(
+            buffer_
+            ? scalarUWConvection->fvmDiv(phi_, cvar_)
+            : fvm::div(phi_, cvar_)
+        )
+        -fvm::laplacian( mut/Sct_ + mu/Sc_, cvar_)
+        -(2.0*mut/Sct_*(fvc::grad(c_) & fvc::grad(c_)))
+        +2.0*(rho_*chi_c_)
+        -2.0*(cOmega_c_-omega_c_*c_)  
+    ); 
+
+    if(relaxation_)
+    {
+        cvarEqn.relax();
+    }
+    cvarEqn.solve();
+    cvar_.min(cvarMax_);
+    cvar_.max(cvarMin_);    
+
 
     // Solve the FSD transport equation
     this->phiFSD_ = linearInterpolate(U_) & this->mesh().Sf();
@@ -1085,6 +1158,17 @@ void Foam::combustionModels::baseFSD<ReactionThermo>::initialiseFalmeKernel()
 
         Info<< "Flame initialisation done"<< endl;
     }    
+}
+
+template<class ReactionThermo>
+void Foam::combustionModels::baseFSD<ReactionThermo>::magUPrime()
+{
+    autoPtr<LESfilter> filterPtr_(LESfilter::New(this->mesh(), this->turbulence().coeffDict()));
+    LESfilter& filter_(filterPtr_());
+
+    magUPrime_=mag(U_-filter_(U_));
+
+   // return magUPrime_;
 }
 
 template<class ReactionThermo>

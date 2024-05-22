@@ -22,7 +22,7 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Class
-    Foam::patchInjectionBase
+    Foam::patchFuncInjectionBase
 
 Description
     Base class for patch-based injection models.
@@ -33,12 +33,12 @@ Description
     then applied to determine across which face a parcel is to be injected.
 
 SourceFiles
-    PatchInjectionBase.C
+    patchFuncInjectionBase.C
 
 \*---------------------------------------------------------------------------*/
 
-#ifndef patchInjectionBase_H
-#define patchInjectionBase_H
+#ifndef patchFuncInjectionBase_H
+#define patchFuncInjectionBase_H
 
 #include "word.H"
 #include "labelList.H"
@@ -57,10 +57,10 @@ class fvMesh;
 class Random;
 
 /*---------------------------------------------------------------------------*\
-                     Class patchInjectionBase Declaration
+                     Class patchFuncInjectionBase Declaration
 \*---------------------------------------------------------------------------*/
 
-class patchInjectionBase
+class patchFuncInjectionBase
 {
 protected:
 
@@ -99,14 +99,14 @@ public:
     // Constructors
 
         //- Construct from mesh and patch name
-        patchInjectionBase(const polyMesh& mesh, const word& patchName);
+        patchFuncInjectionBase(const polyMesh& mesh, const word& patchName);
 
         //- Copy constructor
-        patchInjectionBase(const patchInjectionBase& pib);
+        patchFuncInjectionBase(const patchFuncInjectionBase& pib);
 
 
     //- Destructor
-    virtual ~patchInjectionBase();
+    virtual ~patchFuncInjectionBase();
 
 
     // Member Functions

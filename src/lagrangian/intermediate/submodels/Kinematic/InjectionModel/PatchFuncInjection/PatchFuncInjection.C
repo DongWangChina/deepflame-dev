@@ -38,7 +38,7 @@ Foam::PatchFuncInjection<CloudType>::PatchFuncInjection
 )
 :
     InjectionModel<CloudType>(dict, owner, modelName, typeName),
-    patchInjectionBase(owner.mesh(), this->coeffDict().lookup("patchName")),
+    patchFuncInjectionBase(owner.mesh(), this->coeffDict().lookup("patchName")),
     duration_(readScalar(this->coeffDict().lookup("duration"))),
     parcelsPerSecond_
     (
@@ -70,7 +70,7 @@ Foam::PatchFuncInjection<CloudType>::PatchFuncInjection
 {
     duration_ = owner.db().time().userTimeToTime(duration_);
 
-    patchInjectionBase::updateMesh(owner.mesh());
+    patchFuncInjectionBase::updateMesh(owner.mesh());
 
     // Set total volume/mass to inject
     this->volumeTotal_ = flowRateProfile_.integrate(0.0, duration_);
@@ -84,7 +84,7 @@ Foam::PatchFuncInjection<CloudType>::PatchFuncInjection
 )
 :
     InjectionModel<CloudType>(im),
-    patchInjectionBase(im),
+    patchFuncInjectionBase(im),
     duration_(im.duration_),
     parcelsPerSecond_(im.parcelsPerSecond_),
     U0_(im.U0_),
@@ -105,7 +105,7 @@ Foam::PatchFuncInjection<CloudType>::~PatchFuncInjection()
 template<class CloudType>
 void Foam::PatchFuncInjection<CloudType>::updateMesh()
 {
-    patchInjectionBase::updateMesh(this->owner().mesh());
+    patchFuncInjectionBase::updateMesh(this->owner().mesh());
 }
 
 
@@ -181,7 +181,7 @@ void Foam::PatchFuncInjection<CloudType>::setPositionAndCell
     label& tetPti
 )
 {
-    patchInjectionBase::setPositionAndCell
+    patchFuncInjectionBase::setPositionAndCell
     (
         this->owner().mesh(),
         this->owner().rndGen(),

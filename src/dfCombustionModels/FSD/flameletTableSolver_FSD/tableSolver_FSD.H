@@ -79,7 +79,7 @@ class tableSolver_FSD
 
         double *d2Yeq_Tb2, *d1Yeq_Tb2;
 
-        int NZ,NC,NGZ,NZK,NK,NY,NS,NZL;
+        int NZ,NC,NGZ,NGC,NZC,NZK,NK,NY,NS,NZL;
 
         double Hox,Hfu,prog;
 
@@ -97,6 +97,7 @@ class tableSolver_FSD
         double  *z_Tb3,     //- z space
                 *c_Tb3,     //- c space
                 *gz_Tb3,    //- z-variance space
+                *gc_Tb3,
                 *ZK_Tb3,
                 *K_Tb3;
 
@@ -134,6 +135,12 @@ class tableSolver_FSD
         double interp2d(int n1, int n2, int loc_z, int loc_gz, double zfac
                         ,double gzfac, double table2d[]); 
 
+        //- 4D linear interpolation
+        double interp4d(int nz, int nc, int ngz, int ngc, 
+                        int loc_z, int loc_c, int loc_gz, int loc_gc, 
+                        double zfac, double cfac, double gzfac, double gcfac, 
+                        double table_4d[]);
+
         //- 1D table look-up
         double lookup1d(int n1, double list_1[], double x1, double table_1d[]);
 
@@ -145,6 +152,13 @@ class tableSolver_FSD
         double lookup3d(int n1, double list_1[], double x1,int n2,
                         double list_2[], double x2, int n3, double list_3[], double x3, double table_3d[]);
 
+        //- 4D table look-up
+        double lookup4d(int n1, double list_1[], double x1,
+                        int n2,double list_2[], double x2, 
+                        int n3, double list_3[], double x3, 
+                        int n4, double list_4[], double x4, 
+                        double table_4d[]);
+
         //- SDR model for progress variable
         double sdrFLRmodel(double cvar, double uSgs_pr, double filterSize
                         ,double sl, double dl, double tau, double kc_s
@@ -154,6 +168,9 @@ class tableSolver_FSD
         //- SDR model for passive scalar
         double sdrLRXmodel(double Csdr, double nut, double delta, double var);
 
+        //- RANS SDR model for progress variable
+        double RANSsdrFLRmodel(double cvar, double epsilon, double k, double nu,
+                            double sl, double dl, double tau, double kc_s,double rho);
 
         //- Destructor
         virtual ~tableSolver_FSD();

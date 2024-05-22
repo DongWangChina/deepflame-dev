@@ -24,8 +24,8 @@ License
 \*---------------------------------------------------------------------------*/
 
 #include "basicSprayCloud.H"
-#include "basicReactingCloud.H"
 
+#include "patchFuncInjectionBase.H"
 
 #include "PatchFuncInjection.H"
 

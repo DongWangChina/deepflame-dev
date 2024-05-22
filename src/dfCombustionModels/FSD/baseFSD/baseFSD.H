@@ -114,6 +114,9 @@ class baseFSD
 
     //- mixture fraction variance Zvar
     volScalarField Zvar_;    
+
+    //- progress variable c variance
+    volScalarField cvar_;
     
     //- enthalpy 
     volScalarField He_;
@@ -159,10 +162,16 @@ class baseFSD
     //- mixture fraction dissipation rate (s^{-1})
     volScalarField chi_Z_; 
 
+    //- progress variable dissipation rate (s^{-1})
+    volScalarField chi_c_;
+
     volScalarField chi_Zc_; 
 
     //- filtered SDR of mixture fraction
     volScalarField chi_Zfltd_; 
+
+    //- betac for LES
+    volScalarField betac_;
 
     volScalarField He_s_;
     volScalarField c_s_;
@@ -208,22 +217,28 @@ class baseFSD
     //- modeled surface-averaged normal vector
     volVectorField n_FSD_;
 
+    volScalarField cOmega_c_;
+
     //- internal fields
     scalarField& WtCells_; 
     scalarField& CpCells_;
     scalarField& ZCells_;
     scalarField& ZvarCells_;
+    scalarField& cvarCells_;
     scalarField& HCells_;
     scalarField& HfCells_;
     scalarField& cCells_;
     scalarField& fsdCells_;
     scalarField& KaCells_;
     scalarField& omega_cCells_;
+    scalarField& cOmega_cCells_;
     scalarField& omega_c_chiZCells_;
     scalarField& omega_Y_fuelCells_;
     scalarField& chi_ZCells_;
+    scalarField& chi_cCells_;
     scalarField& chi_ZcCells_;
     scalarField& chi_ZfltdCells_;
+    scalarField& betacCells_; 
     scalarField& rho_uCells_;
     scalarField& SL0_FSDCells_;
     scalarField& thermoThickness_L0_FSDCells_;
@@ -248,6 +263,10 @@ class baseFSD
     //- max and min Z variance
     scalar ZvarMax_;
     scalar ZvarMin_;
+
+    //- max and min c variance
+    scalar cvarMax_;
+    scalar cvarMin_;
 
     //- max and min T
     scalar TMax_;
@@ -310,6 +329,10 @@ class baseFSD
     //- if in LES mode
     Switch isLES_;
 
+    //SGS
+    volScalarField magUPrime_;
+    scalarField& magUPrimeCells_; 
+
     multivariateSurfaceInterpolationScheme<scalar>::fieldTable fields_;
 
  public:
@@ -338,7 +361,10 @@ class baseFSD
         virtual void transport();
 
         //- initialize flame kernel 
-        virtual void initialiseFalmeKernel();        
+        virtual void initialiseFalmeKernel();    
+
+        //- return mag SGS
+        virtual void magUPrime();    
 
         //- reaturn buffer_
         virtual bool buffer();

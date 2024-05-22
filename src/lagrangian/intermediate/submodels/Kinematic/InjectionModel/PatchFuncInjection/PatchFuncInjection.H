@@ -43,11 +43,11 @@ SourceFiles
 
 \*---------------------------------------------------------------------------*/
 
-#ifndef PatchFuncInjection_H
-#define PatchFuncInjection_H
+#ifndef PATCHFUNCINJECTION_H
+#define PATCHFUNCINJECTION_H
 
 #include "InjectionModel.H"
-#include "patchInjectionBase.H"
+#include "patchFuncInjectionBase.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -67,7 +67,7 @@ template<class CloudType>
 class PatchFuncInjection
 :
     public InjectionModel<CloudType>,
-    public patchInjectionBase
+    public patchFuncInjectionBase
 {
     // Private Data
 
@@ -124,8 +124,8 @@ public:
 
     // Member Functions
 
-        //- Inherit updateMesh from patchInjectionBase
-        using patchInjectionBase::updateMesh;
+        //- Inherit updateMesh from patchFuncInjectionBase
+        using patchFuncInjectionBase::updateMesh;
 
         //- Set injector locations when mesh is updated
         virtual void updateMesh();
@@ -142,8 +142,8 @@ public:
 
         // Injection geometry
 
-            //- Inherit setPositionAndCell from patchInjectionBase
-            using patchInjectionBase::setPositionAndCell;
+            //- Inherit setPositionAndCell from patchFuncInjectionBase
+            using patchFuncInjectionBase::setPositionAndCell;
 
             //- Set the injection position and owner cell, tetFace and tetPt
             virtual void setPositionAndCell

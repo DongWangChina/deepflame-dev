@@ -17,6 +17,10 @@ FGM/flareFGM/flareFGMs.C
 FGM/DeePFGM/DeePFGMs.C
 #endif
 
+FSD/flameletTableSolver_FSD/tableSolver_FSD.C
+FSD/baseFSD/baseFSDs.C
+FSD/FSDSolver/FSDs.C
+
 laminar/laminars.C
 
 noCombustion/noCombustions.C

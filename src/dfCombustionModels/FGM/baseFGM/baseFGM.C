@@ -759,7 +759,7 @@ void Foam::combustionModels::baseFGM<ReactionThermo>::transport()
                 hSource.source() += spray.rhoTrans(i)*this->chemistryPtr_->hci(i)/this->mesh().time().deltaT();
             }
 
-            hSource.source() += spray.hsTrans()/this->mesh().time().deltaT();
+            // hSource.source() += spray.hsTrans()/this->mesh().time().deltaT();
 
 
             fvScalarMatrix HEqn

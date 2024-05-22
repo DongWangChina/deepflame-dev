@@ -1,5 +1,6 @@
+patchFuncInjectionBase.C
 PatchFuncInjections.C
 
-
 LIB = $(FOAM_USER_LIBBIN)/libDFPatchFuncInjection
+/*$(FOAM_USER_LIBBIN)/libDFPatchFuncInjection*/
 

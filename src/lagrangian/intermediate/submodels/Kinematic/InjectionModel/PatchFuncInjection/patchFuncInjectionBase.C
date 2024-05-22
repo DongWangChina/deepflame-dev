@@ -23,7 +23,7 @@ License
 
 \*---------------------------------------------------------------------------*/
 
-#include "patchInjectionBase.H"
+#include "patchFuncInjectionBase.H"
 #include "polyMesh.H"
 #include "SubField.H"
 #include "Random.H"
@@ -33,7 +33,7 @@ License
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
-Foam::patchInjectionBase::patchInjectionBase
+Foam::patchFuncInjectionBase::patchFuncInjectionBase
 (
     const polyMesh& mesh,
     const word& patchName
@@ -61,7 +61,7 @@ Foam::patchInjectionBase::patchInjectionBase
 }
 
 
-Foam::patchInjectionBase::patchInjectionBase(const patchInjectionBase& pib)
+Foam::patchFuncInjectionBase::patchFuncInjectionBase(const patchFuncInjectionBase& pib)
 :
     patchName_(pib.patchName_),
     patchId_(pib.patchId_),
@@ -77,13 +77,13 @@ Foam::patchInjectionBase::patchInjectionBase(const patchInjectionBase& pib)
 
 // * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
 
-Foam::patchInjectionBase::~patchInjectionBase()
+Foam::patchFuncInjectionBase::~patchFuncInjectionBase()
 {}
 
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
-void Foam::patchInjectionBase::updateMesh(const polyMesh& mesh)
+void Foam::patchFuncInjectionBase::updateMesh(const polyMesh& mesh)
 {
     // Set/cache the injector cells
     const polyPatch& patch = mesh.boundaryMesh()[patchId_];
@@ -148,7 +148,7 @@ void Foam::patchInjectionBase::updateMesh(const polyMesh& mesh)
 }
 
 
-void Foam::patchInjectionBase::setPositionAndCell
+void Foam::patchFuncInjectionBase::setPositionAndCell
 (
     const fvMesh& mesh,
     Random& rnd,
