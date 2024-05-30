@@ -65,12 +65,18 @@ class tableSolver_FSD
 
         //- self-defined species name
         hashedWordList speciesNames_table_;
+        wordList spc_omegaNames_table_;
 
         //- List of the used tables
         hashedWordList tableNames_;
 
         //- tables of all tabulated properties, by tableNames_'s order
         List<scalar*> tableValues_;
+
+        Switch scaledPV_;
+
+        //- unscaled max C
+        double cMaxAll_;
 
         double *I0_Tab;
 
@@ -79,7 +85,7 @@ class tableSolver_FSD
 
         double *d2Yeq_Tb2, *d1Yeq_Tb2;
 
-        int NZ,NC,NGZ,NGC,NZC,NZK,NK,NY,NS,NZL;
+        int NH,NZ,NC,NGZ,NGC,NZC,NZK,NK,NY,NS,NZL,NYomega;
 
         double Hox,Hfu,prog;
 
@@ -94,10 +100,12 @@ class tableSolver_FSD
                 *kctau_Tb5, //- for calculating chi_c
                 *rho_u_Tb5; //- unburnt density
 
-        double  *z_Tb3,     //- z space
+        double  *h_Tb3,     //- h loss space
+                *z_Tb3,     //- z space
                 *c_Tb3,     //- c space
                 *gz_Tb3,    //- z-variance space
-                *gc_Tb3,
+                *gc_Tb3,    //- c-variance space
+                *gzc_Tb3,   //- z-c co-variance space
                 *ZK_Tb3,
                 *K_Tb3;
 
@@ -111,6 +119,9 @@ class tableSolver_FSD
 
         //- solve variance 
         double cal_gvar(double mean, double var, double Ycmax = -1.0);
+
+        //- Compute correlation coefficient between Z and c
+        double cal_gcor(double Z, double c, double Zvar, double cvar, double Zcvar);
 
         //- Locate lower index for 1D linear interpolation
         int locate_lower(int n, double array[], double x); 
@@ -141,6 +152,19 @@ class tableSolver_FSD
                         double zfac, double cfac, double gzfac, double gcfac, 
                         double table_4d[]);
 
+        //- 5D linear interpolation
+        double interp5d(int nz, int nc, int ngz, int ngc, int ngcz
+                        ,int loc_z, int loc_c, int loc_gz, int loc_gc, int loc_gcz
+                        ,double zfac, double cfac, double gzfac, double gcfac
+                        ,double gczfac, double table_5d[]);
+
+        //- 6D linear interpolation
+        double interp6d(int nh,int nz, int nc, int ngz, int ngc, int ngcz
+                        , int loc_h, int loc_z, int loc_c, int loc_gz, int loc_gc, int loc_gcz
+                        , double hfac, double zfac, double cfac, double gzfac, double gcfac
+                        ,double gczfac, double table_6d[]);
+
+
         //- 1D table look-up
         double lookup1d(int n1, double list_1[], double x1, double table_1d[]);
 
@@ -158,6 +182,23 @@ class tableSolver_FSD
                         int n3, double list_3[], double x3, 
                         int n4, double list_4[], double x4, 
                         double table_4d[]);
+
+        //- 5D table look-up
+        double lookup5d(int n1, double list_1[], double x1,
+                        int n2, double list_2[], double x2,
+                        int n3, double list_3[], double x3,
+                        int n4, double list_4[], double x4,
+                        int n5, double list_5[], double x5,
+                        double table_5d[]); 
+
+        //- 6D table look-up
+        double lookup6d(int n1, double list_1[], double x1,
+                        int n2, double list_2[], double x2,
+                        int n3, double list_3[], double x3,
+                        int n4, double list_4[], double x4,
+                        int n5, double list_5[], double x5,
+                        int n6, double list_6[], double x6,
+                        double table_5d[]); 
 
         //- SDR model for progress variable
         double sdrFLRmodel(double cvar, double uSgs_pr, double filterSize

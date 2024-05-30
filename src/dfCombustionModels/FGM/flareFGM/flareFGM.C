@@ -260,7 +260,8 @@ void Foam::combustionModels::flareFGM<ReactionThermo>::retrieval()
         gc = this->cal_gvar(this->cCells_[celli],this->cvarCells_[celli],Ycmax);  
 
         if(this->ZCells_[celli] >= Zl && this->ZCells_[celli] <= Zr
-        && this->combustion_ && this->cCells_[celli] > this->small)  
+            && this->combustion_ && this->cCells_[celli] > this->small
+            && hLoss <= this->h_Tb3[this->NH - 1])  
         {
             if (this->isLES_)
             {
@@ -355,6 +356,40 @@ void Foam::combustionModels::flareFGM<ReactionThermo>::retrieval()
                                     this->NZC,this->gzc_Tb3,gcz,
                                     this->tableValues_[7])*this->rho_[celli];   
 
+        this->Cp_eCells_[celli] = this->lookup6d(this->NH,this->h_Tb3,hLoss,
+                                    this->NZ,this->z_Tb3,this->ZCells_[celli],
+                                    this->NC,this->c_Tb3,cNorm,
+                                    this->NGZ,this->gz_Tb3,gz,
+                                    this->NGC,this->gc_Tb3,gc,
+                                    this->NZC,this->gzc_Tb3,gcz,
+                                    this->tableValues_[3]);   
+
+        this->Cp_massCells_[celli] = this->lookup6d(this->NH,this->h_Tb3,hLoss,
+                                    this->NZ,this->z_Tb3,this->ZCells_[celli],
+                                    this->NC,this->c_Tb3,cNorm,
+                                    this->NGZ,this->gz_Tb3,gz,
+                                    this->NGC,this->gc_Tb3,gc,
+                                    this->NZC,this->gzc_Tb3,gcz,
+                                    this->tableValues_[8]);   
+
+        this->kappaCells_[celli] = this->lookup6d(this->NH,this->h_Tb3,hLoss,
+                                    this->NZ,this->z_Tb3,this->ZCells_[celli],
+                                    this->NC,this->c_Tb3,cNorm,
+                                    this->NGZ,this->gz_Tb3,gz,
+                                    this->NGC,this->gc_Tb3,gc,
+                                    this->NZC,this->gzc_Tb3,gcz,
+                                    this->tableValues_[9]);   
+
+        this->HfCells_[celli] = this->lookup6d(this->NH,this->h_Tb3,hLoss,
+                                    this->NZ,this->z_Tb3,this->ZCells_[celli],
+                                    this->NC,this->c_Tb3,cNorm,
+                                    this->NGZ,this->gz_Tb3,gz,
+                                    this->NGC,this->gc_Tb3,gc,
+                                    this->NZC,this->gzc_Tb3,gcz,
+                                    this->tableValues_[5]);   
+
+        this->alpha_[celli] = this->kappaCells_[celli] / (this->Cp_massCells_[celli] + Foam::VSMALL);
+
         // // -------------------- Yis begin ------------------------------
         for (int yi=0; yi<this->NY; yi++)
         {
@@ -374,7 +409,7 @@ void Foam::combustionModels::flareFGM<ReactionThermo>::retrieval()
         // -------------------- omega Yis begin ------------------------------
         if (!this->omega_YiNames_base_.empty())
         {
-            if(tableSolver::scaledPV_)   
+            if(tableSolver::scaledPV_ && hLoss <= this->h_Tb3[this->NH - 1])   
             {
                 forAll(this->omega_YiNames_base_, speciesI)
                 {
@@ -388,7 +423,7 @@ void Foam::combustionModels::flareFGM<ReactionThermo>::retrieval()
                                         *this->rho_[celli];
                 }
             }
-            else
+            else if (hLoss <= this->h_Tb3[this->NH - 1])
             {
                 forAll(this->omega_YiNames_base_, speciesI)
                 {
@@ -400,6 +435,13 @@ void Foam::combustionModels::flareFGM<ReactionThermo>::retrieval()
                                             this->NZC,this->gzc_Tb3,gcz,
                                             this->tableValues_[this->NS-1-this->NYomega+speciesI])
                                         *this->rho_[celli];
+                }
+            }
+            else
+            {
+                forAll(this->omega_YiNames_base_, speciesI)
+                {
+                    this->omega_Yis_[speciesI].primitiveFieldRef()[celli] = 0.0;
                 }
             }
         }
@@ -418,23 +460,7 @@ void Foam::combustionModels::flareFGM<ReactionThermo>::retrieval()
         }
         else
         {
-            this->CpCells_[celli] = this->lookup6d(this->NH,this->h_Tb3,hLoss,
-                                        this->NZ,this->z_Tb3,this->ZCells_[celli],
-                                        this->NC,this->c_Tb3,cNorm,
-                                        this->NGZ,this->gz_Tb3,gz,
-                                        this->NGC,this->gc_Tb3,gc,
-                                        this->NZC,this->gzc_Tb3,gcz,
-                                        this->tableValues_[3]);   
-
-            this->HfCells_[celli] = this->lookup6d(this->NH,this->h_Tb3,hLoss,
-                                        this->NZ,this->z_Tb3,this->ZCells_[celli],
-                                        this->NC,this->c_Tb3,cNorm,
-                                        this->NGZ,this->gz_Tb3,gz,
-                                        this->NGC,this->gc_Tb3,gc,
-                                        this->NZC,this->gzc_Tb3,gcz,
-                                        this->tableValues_[5]);   
-
-            this->TCells_[celli] = (this->HCells_[celli]-this->HfCells_[celli])/this->CpCells_[celli]
+            this->TCells_[celli] = (this->HCells_[celli]-this->HfCells_[celli])/this->Cp_eCells_[celli]
                             + this->T0;   
         }
 
@@ -451,7 +477,10 @@ void Foam::combustionModels::flareFGM<ReactionThermo>::retrieval()
         fvPatchScalarField& pZvar = this->Zvar_.boundaryFieldRef()[patchi];  
         fvPatchScalarField& pH = this->He_.boundaryFieldRef()[patchi];     
         fvPatchScalarField& pWt = this->Wt_.boundaryFieldRef()[patchi];   
-        fvPatchScalarField& pCp = this->Cp_.boundaryFieldRef()[patchi];   
+        fvPatchScalarField& pCp_e = this->Cp_e_.boundaryFieldRef()[patchi];   
+        fvPatchScalarField& pCp_mass = this->Cp_mass_.boundaryFieldRef()[patchi]; 
+        fvPatchScalarField& pkappa = this->kappa_.boundaryFieldRef()[patchi]; 
+        fvPatchScalarField& palpha = this->alpha_.boundaryFieldRef()[patchi]; 
         fvPatchScalarField& pHf = this->Hf_.boundaryFieldRef()[patchi];   
         fvPatchScalarField& pT = this->T_.boundaryFieldRef()[patchi];     
         fvPatchScalarField& prho_ = this->rho_.boundaryFieldRef()[patchi];   
@@ -576,7 +605,8 @@ void Foam::combustionModels::flareFGM<ReactionThermo>::retrieval()
             this->Zcvar_s_.boundaryFieldRef()[patchi][facei] = gcz;
 
             if(pZ[facei] >= Zl && pZ[facei] <= Zr
-                && this->combustion_ && pc[facei] > this->small) 
+                && this->combustion_ && pc[facei] > this->small
+                && hLoss <= this->h_Tb3[this->NH - 1]) 
             {
                 if (this->isLES_)
                 {
@@ -659,6 +689,40 @@ void Foam::combustionModels::flareFGM<ReactionThermo>::retrieval()
                                         this->NZC,this->gzc_Tb3,gcz,
                                         this->tableValues_[7])*prho_[facei];  
 
+            pCp_e[facei] = this->lookup6d(this->NH,this->h_Tb3,hLoss,
+                                        this->NZ,this->z_Tb3,pZ[facei],
+                                        this->NC,this->c_Tb3,cNorm,
+                                        this->NGZ,this->gz_Tb3,gz,
+                                        this->NGC,this->gc_Tb3,gc,
+                                        this->NZC,this->gzc_Tb3,gcz,
+                                        this->tableValues_[3]);   
+
+            pCp_mass[facei] = this->lookup6d(this->NH,this->h_Tb3,hLoss,
+                                        this->NZ,this->z_Tb3,pZ[facei],
+                                        this->NC,this->c_Tb3,cNorm,
+                                        this->NGZ,this->gz_Tb3,gz,
+                                        this->NGC,this->gc_Tb3,gc,
+                                        this->NZC,this->gzc_Tb3,gcz,
+                                        this->tableValues_[8]);   
+
+            pkappa[facei] = this->lookup6d(this->NH,this->h_Tb3,hLoss,
+                                        this->NZ,this->z_Tb3,pZ[facei],
+                                        this->NC,this->c_Tb3,cNorm,
+                                        this->NGZ,this->gz_Tb3,gz,
+                                        this->NGC,this->gc_Tb3,gc,
+                                        this->NZC,this->gzc_Tb3,gcz,
+                                        this->tableValues_[9]);   
+
+            pHf[facei] = this->lookup6d(this->NH,this->h_Tb3,hLoss,
+                                        this->NZ,this->z_Tb3,pZ[facei],
+                                        this->NC,this->c_Tb3,cNorm,
+                                        this->NGZ,this->gz_Tb3,gz,
+                                        this->NGC,this->gc_Tb3,gc,
+                                        this->NZC,this->gzc_Tb3,gcz,
+                                        this->tableValues_[5]);  
+
+            palpha[facei] = pkappa[facei]/ (pCp_mass[facei] + Foam::VSMALL);
+
             if(baseFGM<ReactionThermo>::flameletT_)  
             {
                 pT[facei] = this->lookup6d(this->NH,this->h_Tb3,hLoss,
@@ -671,23 +735,7 @@ void Foam::combustionModels::flareFGM<ReactionThermo>::retrieval()
             }
             else
             {
-                pCp[facei] = this->lookup6d(this->NH,this->h_Tb3,hLoss,
-                                        this->NZ,this->z_Tb3,pZ[facei],
-                                        this->NC,this->c_Tb3,cNorm,
-                                        this->NGZ,this->gz_Tb3,gz,
-                                        this->NGC,this->gc_Tb3,gc,
-                                        this->NZC,this->gzc_Tb3,gcz,
-                                        this->tableValues_[3]);   
-
-                pHf[facei] = this->lookup6d(this->NH,this->h_Tb3,hLoss,
-                                        this->NZ,this->z_Tb3,pZ[facei],
-                                        this->NC,this->c_Tb3,cNorm,
-                                        this->NGZ,this->gz_Tb3,gz,
-                                        this->NGC,this->gc_Tb3,gc,
-                                        this->NZC,this->gzc_Tb3,gcz,
-                                        this->tableValues_[5]);  
-
-                pT[facei] = (pH[facei]-pHf[facei])/pCp[facei]
+                pT[facei] = (pH[facei]-pHf[facei])/pCp_e[facei]
                             + this->T0;  
             }
 
@@ -715,7 +763,7 @@ void Foam::combustionModels::flareFGM<ReactionThermo>::retrieval()
             // -------------------- omega Yis begin ------------------------------
             if (!this->omega_YiNames_base_.empty())
             {
-                if(tableSolver::scaledPV_)
+                if(tableSolver::scaledPV_ && hLoss <= this->h_Tb3[this->NH - 1])
                 {
                     forAll(this->omega_YiNames_base_, speciesI)
                     {
@@ -729,7 +777,7 @@ void Foam::combustionModels::flareFGM<ReactionThermo>::retrieval()
                                             *prho_[facei];  
                     }
                 }
-                else
+                else if (hLoss <= this->h_Tb3[this->NH - 1])
                 {
                     forAll(this->omega_YiNames_base_, speciesI)
                     {
@@ -741,6 +789,13 @@ void Foam::combustionModels::flareFGM<ReactionThermo>::retrieval()
                                                 this->NZC,this->gzc_Tb3,gcz,
                                                 this->tableValues_[this->NS-1-this->NYomega+speciesI])
                                             *prho_[facei];  
+                    }
+                }
+                else
+                {
+                    forAll(this->omega_YiNames_base_, speciesI)
+                    {
+                        this->omega_Yis_[speciesI].boundaryFieldRef()[patchi][facei]  = 0.0;  
                     }
                 }
 

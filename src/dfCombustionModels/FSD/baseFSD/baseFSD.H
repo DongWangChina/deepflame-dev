@@ -117,6 +117,9 @@ class baseFSD
 
     //- progress variable c variance
     volScalarField cvar_;
+
+    //- co-variance Z, c
+    volScalarField Zcvar_;
     
     //- enthalpy 
     volScalarField He_;
@@ -157,7 +160,7 @@ class baseFSD
 
     volScalarField omega_c_chiZ_;
 
-    volScalarField omega_Y_fuel_;
+    // volScalarField omega_Y_fuel_;
 
     //- mixture fraction dissipation rate (s^{-1})
     volScalarField chi_Z_; 
@@ -218,6 +221,7 @@ class baseFSD
     volVectorField n_FSD_;
 
     volScalarField cOmega_c_;
+    volScalarField ZOmega_c_;
 
     //- internal fields
     scalarField& WtCells_; 
@@ -225,6 +229,7 @@ class baseFSD
     scalarField& ZCells_;
     scalarField& ZvarCells_;
     scalarField& cvarCells_;
+    scalarField& ZcvarCells_;
     scalarField& HCells_;
     scalarField& HfCells_;
     scalarField& cCells_;
@@ -232,8 +237,9 @@ class baseFSD
     scalarField& KaCells_;
     scalarField& omega_cCells_;
     scalarField& cOmega_cCells_;
+    scalarField& ZOmega_cCells_;
     scalarField& omega_c_chiZCells_;
-    scalarField& omega_Y_fuelCells_;
+    // scalarField& omega_Y_fuelCells_;
     scalarField& chi_ZCells_;
     scalarField& chi_cCells_;
     scalarField& chi_ZcCells_;
@@ -267,6 +273,10 @@ class baseFSD
     //- max and min c variance
     scalar cvarMax_;
     scalar cvarMin_;
+
+    //- max and min Zc variance 
+    scalar ZcvarMax_;
+    scalar ZcvarMin_;   
 
     //- max and min T
     scalar TMax_;
@@ -324,6 +334,14 @@ class baseFSD
 
     //- Dpdt switch 
     Switch DpDt_;    
+
+    //- index for omega speices
+    labelList omega_Yi_index_;
+
+    wordList omega_YiNames_base_;
+
+    // //- reaction rate for fuel species
+    PtrList<volScalarField> omega_Yis_;
 
     //- LES
     //- if in LES mode

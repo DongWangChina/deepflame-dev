@@ -51,6 +51,7 @@ Foam::combustionModels::baseFGM<ReactionThermo>::baseFGM
     droplet_stat_startTime_(this->coeffs().lookupOrDefault("droplet_stat_startTime", 0.0)),
     tablePath_(this->coeffs().lookup("tablePath")),
     psi_(const_cast<volScalarField&>(dynamic_cast<rhoThermo&>(thermo).psi())),
+    alpha_(const_cast<volScalarField&>(thermo.alpha())),
     Wt_ 
     (
         IOobject
@@ -64,18 +65,44 @@ Foam::combustionModels::baseFGM<ReactionThermo>::baseFGM
         this->mesh(),
         dimensionedScalar("Wt",dimensionSet(1,0,0,0,-1,0,0),28.96)  
     ),
-    Cp_ 
+    Cp_e_ 
     (
         IOobject
         (
-            "Cp",
+            "Cp_e",
             this->mesh().time().timeName(),
             this->mesh(),
             IOobject::NO_READ,
             IOobject::AUTO_WRITE
         ),
         this->mesh(),
-        dimensionedScalar("Cp",dimensionSet(0,2,-2,-1,0,0,0),1010.1)
+        dimensionedScalar("Cp_e",dimensionSet(0,2,-2,-1,0,0,0),1010.1)
+    ),
+    Cp_mass_ 
+    (
+        IOobject
+        (
+            "Cp_mass",
+            this->mesh().time().timeName(),
+            this->mesh(),
+            IOobject::NO_READ,
+            IOobject::AUTO_WRITE
+        ),
+        this->mesh(),
+        dimensionedScalar("Cp_mass",dimensionSet(0,2,-2,-1,0,0,0),1010.1)
+    ),
+    kappa_ 
+    (
+        IOobject
+        (
+            "kappa",
+            this->mesh().time().timeName(),
+            this->mesh(),
+            IOobject::NO_READ,
+            IOobject::AUTO_WRITE
+        ),
+        this->mesh(),
+        dimensionedScalar("kappa",dimensionSet(1,1,-3,-1,0,0,0),0.223)
     ),
     Z_
     (
@@ -348,7 +375,9 @@ Foam::combustionModels::baseFGM<ReactionThermo>::baseFGM
     cOmega_c_(omega_c_),
     ZOmega_c_(omega_c_), 
     WtCells_ (Wt_.primitiveFieldRef()),
-    CpCells_ (Cp_.primitiveFieldRef()),
+    Cp_eCells_ (Cp_e_.primitiveFieldRef()),
+    Cp_massCells_ (Cp_mass_.primitiveFieldRef()),
+    kappaCells_ (kappa_.primitiveFieldRef()),
     ZCells_(Z_.primitiveFieldRef()),
     ZvarCells_(Zvar_.primitiveFieldRef()), 
     HCells_(He_.primitiveFieldRef()),
@@ -759,7 +788,7 @@ void Foam::combustionModels::baseFGM<ReactionThermo>::transport()
                 hSource.source() += spray.rhoTrans(i)*this->chemistryPtr_->hci(i)/this->mesh().time().deltaT();
             }
 
-            // hSource.source() += spray.hsTrans()/this->mesh().time().deltaT();
+            hSource.source() += spray.hsTrans()/this->mesh().time().deltaT();  // equivalent to parcels.Sh(he)
 
 
             fvScalarMatrix HEqn

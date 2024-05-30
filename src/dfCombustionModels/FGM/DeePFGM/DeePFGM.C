@@ -492,7 +492,7 @@ void Foam::combustionModels::DeePFGM<ReactionThermo>::retrieval( )
         }
         else
         {
-            this->CpCells_[celli] = this->lookup6d(this->NH,this->h_Tb3,this->He_s_[celli],
+            this->Cp_eCells_[celli] = this->lookup6d(this->NH,this->h_Tb3,this->He_s_[celli],
                                         this->NZ,this->z_Tb3,this->ZCells_[celli],
                                         this->NC,this->c_Tb3,this->c_s_[celli],
                                         this->NGZ,this->gz_Tb3,this->Zvar_s_[celli],
@@ -506,7 +506,7 @@ void Foam::combustionModels::DeePFGM<ReactionThermo>::retrieval( )
                                         this->NGC,this->gc_Tb3,this->cvar_s_[celli],
                                         this->NZC,this->gzc_Tb3,this->Zcvar_s_[celli],
                                         this->tableValues_[5]);   
-            this->TCells_[celli] = (this->HCells_[celli]-this->HfCells_[celli])/this->CpCells_[celli]
+            this->TCells_[celli] = (this->HCells_[celli]-this->HfCells_[celli])/this->Cp_eCells_[celli]
                             + this->T0;   
         }
     }
@@ -517,7 +517,7 @@ void Foam::combustionModels::DeePFGM<ReactionThermo>::retrieval( )
         fvPatchScalarField& pZvar = this->Zvar_.boundaryFieldRef()[patchi];  
         fvPatchScalarField& pH = this->He_.boundaryFieldRef()[patchi];     
         fvPatchScalarField& pWt = this->Wt_.boundaryFieldRef()[patchi];   
-        fvPatchScalarField& pCp = this->Cp_.boundaryFieldRef()[patchi];   
+        fvPatchScalarField& pCp_e = this->Cp_e_.boundaryFieldRef()[patchi];   
         fvPatchScalarField& pHf = this->Hf_.boundaryFieldRef()[patchi];   
         fvPatchScalarField& pT = this->T_.boundaryFieldRef()[patchi];     
         fvPatchScalarField& prho_ = this->rho_.boundaryFieldRef()[patchi];   
@@ -753,7 +753,7 @@ void Foam::combustionModels::DeePFGM<ReactionThermo>::retrieval( )
             }
             else
             {
-                pCp[facei] = this->lookup6d(this->NH,this->h_Tb3,this->He_s_.boundaryFieldRef()[patchi][facei],
+                pCp_e[facei] = this->lookup6d(this->NH,this->h_Tb3,this->He_s_.boundaryFieldRef()[patchi][facei],
                                         this->NZ,this->z_Tb3,pZ[facei],
                                         this->NC,this->c_Tb3,this->c_s_.boundaryFieldRef()[patchi][facei],
                                         this->NGZ,this->gz_Tb3,this->Zvar_s_.boundaryFieldRef()[patchi][facei],
@@ -768,7 +768,7 @@ void Foam::combustionModels::DeePFGM<ReactionThermo>::retrieval( )
                                         this->NGC,this->gc_Tb3,this->cvar_s_.boundaryFieldRef()[patchi][facei],
                                         this->NZC,this->gzc_Tb3,this->Zcvar_s_.boundaryFieldRef()[patchi][facei],
                                         this->tableValues_[5]);  
-                pT[facei] = (pH[facei]-pHf[facei])/pCp[facei]
+                pT[facei] = (pH[facei]-pHf[facei])/pCp_e[facei]
                             + this->T0;  
             }
             // // -------------------- Yis begin ------------------------------

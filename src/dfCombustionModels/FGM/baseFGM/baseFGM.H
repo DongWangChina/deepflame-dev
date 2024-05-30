@@ -96,11 +96,20 @@ class baseFGM
     //- psi=\rho/p
     volScalarField& psi_;
 
+    //- // kg/(m*s)
+    volScalarField& alpha_;
+
     //- air mass/mole(28.96kg/mol)
     volScalarField Wt_;
     
-    //- heat capacity(m^2*s^{-2}*K^{-1}) 
-    volScalarField Cp_;
+    //- effective heat capacity(m^2*s^{-2}*K^{-1}) 
+    volScalarField Cp_e_;
+
+    //- mass heat capacity(m^2*s^{-2}*K^{-1}) 
+    volScalarField Cp_mass_;
+
+    //- thermo-conductivity
+    volScalarField kappa_;
 
     //- mixture fraction Z
     volScalarField Z_;
@@ -158,7 +167,9 @@ class baseFGM
 
     //- internal fields
     scalarField& WtCells_; 
-    scalarField& CpCells_;
+    scalarField& Cp_eCells_;
+    scalarField& Cp_massCells_;
+    scalarField& kappaCells_;
     scalarField& ZCells_;
     scalarField& ZvarCells_;
     scalarField& HCells_;

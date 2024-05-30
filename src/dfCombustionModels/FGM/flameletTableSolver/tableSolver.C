@@ -62,7 +62,7 @@ H_ox("H_ox",dimensionSet(0,2,-2,0,0,0,0),Hox)
         Info<< "Reading: NH=" << NH << ", NZ=" << NZ << ", NC="<< NC << ", NGZ=" << NGZ << ", NGC=" 
             << NGC << ", NZC="<< NZC << ", NS=" << NS << ", NYomega=" << NYomega << ", NY=" << NY << ", NZL=" << NZL << "\n" << endl;
 
-        tableNames_ = wordList({"omgc_Tb3", "cOc_Tb3", "ZOc_Tb3", "cp_Tb3", "mwt_Tb3", "hiyi_Tb3", "Tf_Tb3", "nu_Tb3"});
+        tableNames_ = wordList({"omgc_Tb3", "cOc_Tb3", "ZOc_Tb3", "cpe_Tb3", "mwt_Tb3", "hiyi_Tb3", "Tf_Tb3", "nu_Tb3", "cp_mass_Tb3", "kappa_Tb3"});
 
         if(NS == 8+NYomega)
         {
