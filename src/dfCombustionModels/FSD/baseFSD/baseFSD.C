@@ -909,10 +909,10 @@ void Foam::combustionModels::baseFSD<ReactionThermo>::transport()
                     ? scalarUWConvection->fvmDiv(phi_, c_)
                     : fvm::div(phi_, c_)
                 )
-                -fvm::laplacian( mut/Sct_ + mu/Sc_, c_)
-                // - fvm::laplacian( mut/Sct_, c_)
-                // - rho_ * SdA_ * fsd_ - omega_c_chiZ_
-                -omega_c_
+                // -fvm::laplacian( mut/Sct_ + mu/Sc_, c_)
+                - fvm::laplacian( mut/Sct_, c_)
+                - rho_ * SdA_ * fsd_ - omega_c_chiZ_
+                // -omega_c_
             );  
             
             if(relaxation_)

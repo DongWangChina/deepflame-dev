@@ -973,11 +973,18 @@ void Foam::combustionModels::FSD<ReactionThermo>::retrieval()
             this->I_s_FSDCells_[celli] = 0.0;  
         }
 
+        if (n_FSD_mod.primitiveFieldRef()[celli] > this->small)
+        {
         this->SdACells_[celli] = this->rho_uCells_[celli] * this->SL0_FSDCells_[celli]
                 * this->I_s_FSDCells_[celli] / this->rho_[celli]  
                 - ( this->curv_SdA_ ?
                     ( muCells[celli] / (this->Sc_) * n_FSD_div_[celli] )
                     : 0.0 );
+        }
+        else
+        {
+            this->SdACells_[celli] = 0.0;
+        }
 
         // if (gradC_modCells[celli] > 0.05 / delta_max
         //     // && this->omega_cCells_[celli] > 1.0
@@ -1092,11 +1099,19 @@ void Foam::combustionModels::FSD<ReactionThermo>::retrieval()
                 pI_s_FSD[facei] = 0.0; 
             }
 
+            if (pn_FSD_mod[facei] > this->small)
+            {
             pSdA[facei] = prho_u[facei] * pSL0_FSD[facei]
                             * pI_s_FSD[facei] / prho[facei]  
                             - ( this->curv_SdA_ ?
                                 ( pmu[facei] / (this->Sc_) * pn_FSD_div[facei] )
                                 : 0.0 );
+            }
+            else
+            {
+                pSdA[facei] = 0.0;
+            }
+
 
 
             // label cellID = this->mesh().boundary()[patchi].faceCells()[facei]; 
