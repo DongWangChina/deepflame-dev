@@ -127,6 +127,8 @@ class baseFSD
     //- formation enthalpy(m^2*s^{-2})
     volScalarField Hf_;
 
+    volScalarField mu_tab_;
+
     //- progress variable c
     volScalarField c_;
 

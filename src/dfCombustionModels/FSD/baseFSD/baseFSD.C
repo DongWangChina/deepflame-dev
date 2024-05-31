@@ -164,6 +164,19 @@ Foam::combustionModels::baseFSD<ReactionThermo>::baseFSD
         this->mesh(),
         dimensionedScalar("Hf",dimensionSet(0,2,-2,0,0,0,0),1907.0)
     ),
+    mu_tab_
+    (
+        IOobject
+        (
+            "mu_tab",
+            this->mesh().time().timeName(),
+            this->mesh(),
+            IOobject::NO_READ,
+            IOobject::AUTO_WRITE
+        ),
+        this->mesh(),
+        dimensionedScalar("mu_tab",dimensionSet(1,-1,-1,0,0,0,0),0.0)
+    ),
     c_
     (
         IOobject
@@ -909,6 +922,8 @@ void Foam::combustionModels::baseFSD<ReactionThermo>::transport()
             cEqn.solve();
             c_.min(cMax_);
             c_.max(cMin_); 
+
+            c_.correctBoundaryConditions();
         } // end if (combustion_)
     }
 

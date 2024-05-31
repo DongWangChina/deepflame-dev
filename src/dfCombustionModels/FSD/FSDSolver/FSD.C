@@ -861,82 +861,12 @@ void Foam::combustionModels::FSD<ReactionThermo>::retrieval()
             }
         }
     }
-
-    forAll(this->rho_, celli)  
-    {
-        if ( ( (this->cCells_[celli] > 0.5 && this->fsdCells_[celli] < 1.0e-4) 
-            or this->cCells_[celli] < 1.0e-4))
-        {
-            this->source_fsd_flaProp_.primitiveFieldRef()[celli] = 0.0;
-        }
-    }
-    
-    volScalarField::Boundary& source_fsd_flaPropBF = this->source_fsd_flaProp_.boundaryFieldRef();
-
-    forAll(this->rho_.boundaryField(), patchi)
-    {
-        fvPatchScalarField& psource_fsd_flaProp = source_fsd_flaPropBF[patchi];
-        fvPatchScalarField& pc = cBF[patchi];
-        fvPatchScalarField& pfsd = fsdBF[patchi];
-
-        forAll(pc, facei)
-        {
-            if ( (pc[facei] > 0.5 && pfsd[facei] < 1.0e-4) or pc[facei] < 1.0e-4)
-            {
-                psource_fsd_flaProp[facei] = 0.0;
-            }
-        }
-    }
-
-
-    this->source_fsd_FCE1_ = this->SdA_ * this->fsd_ * fvc::div(this->n_FSD_);
     
 
 
-    // update rho
-    double R_uniGas_ = 8.314e3;
-    double p_operateDim_ = this->coeffs().lookupOrDefault("p_operateDim", this->incompPref_);
 
-    forAll(this->rho_.boundaryFieldRef(), patchi)   
-    {
-        fvPatchScalarField& ppsi_ = this->psi_.boundaryFieldRef()[patchi];
-        fvPatchScalarField& prho_ = this->rho_.boundaryFieldRef()[patchi];
-        fvPatchScalarField& pWt = this->Wt_.boundaryFieldRef()[patchi];
-        fvPatchScalarField& pT = this->T_.boundaryFieldRef()[patchi];
-        fvPatchScalarField pp_ = this->p_.boundaryField()[patchi];
-
-        forAll(prho_, facei)   
-        {
-            ppsi_[facei] = pWt[facei] / (R_uniGas_*pT[facei]);
-
-            if(this->incompPref_ > 0.0) 
-            {  
-                prho_[facei] = p_operateDim_*ppsi_[facei]; 
-            }
-            else 
-            {
-                prho_[facei] = pp_[facei]*ppsi_[facei];
-            }
-        }
-    }
-
-    dimensionedScalar R_uniGas("R_uniGas",dimensionSet(1,2,-2,-1,-1,0,0),8.314e3);
-    this->psi_ = this->Wt_/(R_uniGas*this->T_);
-  
-    if(this->mesh().time().timeIndex() > 0)   
-    {
-        dimensionedScalar p_operateDim("p_operateDim", dimensionSet(1,-1,-2,0,0,0,0),this->incompPref_);  
-
-        if(this->incompPref_ > 0.0) 
-        {  
-            this->rho_ = p_operateDim*this->psi_; 
-        }
-        else 
-        {
-            this->rho_ = this->p_*this->psi_;
-        }
-    }
-    this->rho_inRhoThermo_ = this->rho_;
+    //----------- start update fsd terms------------
+    this->mu_tab_ = mu;
 
 
 
@@ -1025,7 +955,7 @@ void Foam::combustionModels::FSD<ReactionThermo>::retrieval()
         }
         
 
-        if (this->ZCells_[celli] >= ZKl && this->ZCells_[celli] <= ZKr
+        if (this->ZCells_[celli] >= Zl && this->ZCells_[celli] <= Zr
             && this->combustion_ && this->cCells_[celli] > this->small)  
         {
             this->I_s_FSDCells_[celli] = 1.0;
@@ -1046,7 +976,7 @@ void Foam::combustionModels::FSD<ReactionThermo>::retrieval()
         this->SdACells_[celli] = this->rho_uCells_[celli] * this->SL0_FSDCells_[celli]
                 * this->I_s_FSDCells_[celli] / this->rho_[celli]  
                 - ( this->curv_SdA_ ?
-                    ( muCells[celli] / (this->rho_[celli] * this->Sc_) * n_FSD_div_[celli] )
+                    ( muCells[celli] / (this->Sc_) * n_FSD_div_[celli] )
                     : 0.0 );
 
         // if (gradC_modCells[celli] > 0.05 / delta_max
@@ -1144,7 +1074,7 @@ void Foam::combustionModels::FSD<ReactionThermo>::retrieval()
                 pKa[facei] = 0.0;
             }
 
-            if(pZ[facei] >= ZKl && pZ[facei] <= Zr
+            if(pZ[facei] >= Zl && pZ[facei] <= Zr
                 && this->combustion_ && pc[facei] > this->small) 
             {
                 pI_s_FSD[facei] = 1.0;
@@ -1165,7 +1095,7 @@ void Foam::combustionModels::FSD<ReactionThermo>::retrieval()
             pSdA[facei] = prho_u[facei] * pSL0_FSD[facei]
                             * pI_s_FSD[facei] / prho[facei]  
                             - ( this->curv_SdA_ ?
-                                ( pmu[facei] / (prho[facei] * this->Sc_) * pn_FSD_div[facei] )
+                                ( pmu[facei] / (this->Sc_) * pn_FSD_div[facei] )
                                 : 0.0 );
 
 
@@ -1197,4 +1127,79 @@ void Foam::combustionModels::FSD<ReactionThermo>::retrieval()
 
     // this->source_fsd_flaProp_.max(0.0);  // ？？
 
+    forAll(this->rho_, celli)  
+    {
+        if ( ( (this->cCells_[celli] > 0.5 && this->fsdCells_[celli] < 1.0e-4) 
+            or this->cCells_[celli] < 1.0e-4))
+        {
+            this->source_fsd_flaProp_.primitiveFieldRef()[celli] = 0.0;
+        }
+    }
+    
+    volScalarField::Boundary& source_fsd_flaPropBF = this->source_fsd_flaProp_.boundaryFieldRef();
+
+    forAll(this->rho_.boundaryField(), patchi)
+    {
+        fvPatchScalarField& psource_fsd_flaProp = source_fsd_flaPropBF[patchi];
+        fvPatchScalarField& pc = cBF[patchi];
+        fvPatchScalarField& pfsd = fsdBF[patchi];
+
+        forAll(pc, facei)
+        {
+            if ( (pc[facei] > 0.5 && pfsd[facei] < 1.0e-4) or pc[facei] < 1.0e-4)
+            {
+                psource_fsd_flaProp[facei] = 0.0;
+            }
+        }
+    }
+
+
+    this->source_fsd_FCE1_ = this->SdA_ * this->fsd_ * fvc::div(this->n_FSD_);
+
+
+
+    //--------------- update rho and psi -----------------
+    double R_uniGas_ = 8.314e3;
+    double p_operateDim_ = this->coeffs().lookupOrDefault("p_operateDim", this->incompPref_);
+
+    forAll(this->rho_.boundaryFieldRef(), patchi)   
+    {
+        fvPatchScalarField& ppsi_ = this->psi_.boundaryFieldRef()[patchi];
+        fvPatchScalarField& prho_ = this->rho_.boundaryFieldRef()[patchi];
+        fvPatchScalarField& pWt = this->Wt_.boundaryFieldRef()[patchi];
+        fvPatchScalarField& pT = this->T_.boundaryFieldRef()[patchi];
+        fvPatchScalarField pp_ = this->p_.boundaryField()[patchi];
+
+        forAll(prho_, facei)   
+        {
+            ppsi_[facei] = pWt[facei] / (R_uniGas_*pT[facei]);
+
+            if(this->incompPref_ > 0.0) 
+            {  
+                prho_[facei] = p_operateDim_*ppsi_[facei]; 
+            }
+            else 
+            {
+                prho_[facei] = pp_[facei]*ppsi_[facei];
+            }
+        }
+    }
+
+    dimensionedScalar R_uniGas("R_uniGas",dimensionSet(1,2,-2,-1,-1,0,0),8.314e3);
+    this->psi_ = this->Wt_/(R_uniGas*this->T_);
+  
+    if(this->mesh().time().timeIndex() > 0)   
+    {
+        dimensionedScalar p_operateDim("p_operateDim", dimensionSet(1,-1,-2,0,0,0,0),this->incompPref_);  
+
+        if(this->incompPref_ > 0.0) 
+        {  
+            this->rho_ = p_operateDim*this->psi_; 
+        }
+        else 
+        {
+            this->rho_ = this->p_*this->psi_;
+        }
+    }
+    this->rho_inRhoThermo_ = this->rho_;
 }
