@@ -986,6 +986,7 @@ void Foam::combustionModels::FSD<ReactionThermo>::retrieval()
             this->SdACells_[celli] = 0.0;
         }
 
+
         // if (gradC_modCells[celli] > 0.05 / delta_max
         //     // && this->omega_cCells_[celli] > 1.0
         //     )
