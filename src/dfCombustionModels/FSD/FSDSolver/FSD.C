@@ -417,23 +417,24 @@ void Foam::combustionModels::FSD<ReactionThermo>::retrieval()
 
         //- surface-averaged normal vector
         if (
-            gradC_modCells[celli] > 0.001 / this->deltaCells_[celli]
-            && gradC_modCells[celli] <= this->fsdCells_[celli]
-            && this->omega_cCells_[celli] > 1.0
+            // gradC_modCells[celli] > 0.001 / this->deltaCells_[celli] && 
+            gradC_modCells[celli] <= this->fsdCells_[celli] 
+            // && this->omega_cCells_[celli] > 1.0
             // && this->cCells_[celli] > this->small 
             && this->fsdCells_[celli] > 0.001 / this->deltaCells_[celli]
             && this->ZCells_[celli] >= Zl && this->ZCells_[celli] <= Zr
             && this->combustion_ && this->cCells_[celli] > this->small)
         {
-            this->n_FSDCells_[celli] = - gradCCells[celli] / (this->fsdCells_[celli]);
+            this->n_FSDCells_[celli] = - gradCCells[celli] / (this->fsdCells_[celli] + this->small);
         }
-        else if (gradC_modCells[celli] > 0.001 / this->deltaCells_[celli]
-            && this->omega_cCells_[celli] > 1.0
-            && this->fsdCells_[celli] > 0.001 / this->deltaCells_[celli]
+        else if (
+            // gradC_modCells[celli] > 0.001 / this->deltaCells_[celli] 
+            // && this->omega_cCells_[celli] > 1.0 && 
+            this->fsdCells_[celli] > 0.001 / this->deltaCells_[celli]
             && this->ZCells_[celli] >= Zl && this->ZCells_[celli] <= Zr
             && this->combustion_ && this->cCells_[celli] > this->small)
         {
-            this->n_FSDCells_[celli] = - gradCCells[celli] / gradC_modCells[celli];
+            this->n_FSDCells_[celli] = - gradCCells[celli] / (gradC_modCells[celli] + this->small);
         }
         else
         {
@@ -837,23 +838,24 @@ void Foam::combustionModels::FSD<ReactionThermo>::retrieval()
             }
 
             if (
-                pgradC_mod[facei] > 0.001 / this->deltaCells_[cellID]
-                && pgradC_mod[facei] <= pfsd[facei] 
-                && pomega_c[facei] > 1.0
+                // pgradC_mod[facei] > 0.001 / this->deltaCells_[cellID] && 
+                pgradC_mod[facei] <= pfsd[facei] 
+                // && pomega_c[facei] > 1.0
                 // && pc[facei] > this->small
-                && pfsd[facei] > 0.01 / this->deltaCells_[cellID]
+                && pfsd[facei] > 0.001 / this->deltaCells_[cellID]
                 && pZ[facei] >= Zl && pZ[facei] <= Zr
                 && this->combustion_ && pc[facei] > this->small)
             {
-                pn_FSD[facei] = -pgrad_C[facei] / pfsd[facei];
+                pn_FSD[facei] = -pgrad_C[facei] / (pfsd[facei] + this->small);
             }
-            else if (pgradC_mod[facei] > 0.001 / this->deltaCells_[cellID]
-                && pomega_c[facei] > 1.0
-                && pfsd[facei] > 0.001 / this->deltaCells_[cellID]
+            else if (
+                // pgradC_mod[facei] > 0.001 / this->deltaCells_[cellID] && 
+                // pomega_c[facei] > 1.0 && 
+                pfsd[facei] > 0.001 / this->deltaCells_[cellID]
                 && pZ[facei] >= Zl && pZ[facei] <= Zr
                 && this->combustion_ && pc[facei] > this->small) 
             {
-                pn_FSD[facei] = -pgrad_C[facei] / pgradC_mod[facei];
+                pn_FSD[facei] = -pgrad_C[facei] / (pgradC_mod[facei] + this->small);
             }
             else
             {
@@ -880,7 +882,7 @@ void Foam::combustionModels::FSD<ReactionThermo>::retrieval()
     this->source_fsd_SRE2_ = this->fsd_ * this->phi_fac_FSD_ * this->gamma_k_ * Foam::sqrt(k)
                             / (5.0*(this->delta_ + this->small * this->IField_m1_)) ;
 
-    this->source_fsd_SRE1_.max(0.0);
+    // this->source_fsd_SRE1_.max(0.0);
 
     // orientation factor
     volScalarField orientation_fac_ = 1.0 - ( this->n_FSD_ & this->n_FSD_ );
@@ -924,7 +926,7 @@ void Foam::combustionModels::FSD<ReactionThermo>::retrieval()
         ZKl = this->ZK_Tb3[0];
         ZKr = this->ZK_Tb3[this->NZK-1];
 
-        if ( this->cCells_[celli] < 0.999  && this->cCells_[celli] > this->small)  // finish calculate source_fsd_FCE2_
+        if ( this->cCells_[celli] < 1.0-this->small  && this->cCells_[celli] > this->small)  // finish calculate source_fsd_FCE2_
         {
             this->source_fsd_FCE2_[celli] = orientation_fac_[celli] * this->fsdCells_[celli] * this->fsdCells_[celli] 
                         / (1.0 - this->cCells_[celli]) 
@@ -933,7 +935,7 @@ void Foam::combustionModels::FSD<ReactionThermo>::retrieval()
         else if (this->cCells_[celli] > this->small)
         {
             this->source_fsd_FCE2_[celli] = orientation_fac_.primitiveFieldRef()[celli] * this->fsdCells_[celli] * this->fsdCells_[celli]
-                        / (0.001)
+                        / (this->small)
                         * this->beta_FSD_ * this->SL0_FSDCells_[celli];
         }
         else
@@ -973,7 +975,7 @@ void Foam::combustionModels::FSD<ReactionThermo>::retrieval()
             this->I_s_FSDCells_[celli] = 0.0;  
         }
 
-        if (n_FSD_mod.primitiveFieldRef()[celli] > this->small)
+        if (n_FSD_mod.primitiveFieldRef()[celli] > this->smallest)
         {
         this->SdACells_[celli] = this->rho_uCells_[celli] * this->SL0_FSDCells_[celli]
                 * this->I_s_FSDCells_[celli] / this->rho_[celli]  
@@ -1054,14 +1056,14 @@ void Foam::combustionModels::FSD<ReactionThermo>::retrieval()
             ZKl = this->ZK_Tb3[0];
             ZKr = this->ZK_Tb3[this->NZK-1];
             
-            if (pc[facei] < 0.999 && pc[facei] > this->small)
+            if (pc[facei] < 1.0-this->small && pc[facei] > this->small)
             {
                 psource_fsd_FCE2[facei] = porientation_fac[facei] * pfsd[facei] * pfsd[facei] / (1.0 - pc[facei])
                         * this->beta_FSD_ * pSL0_FSD[facei];
             }
             else if (pc[facei] > this->small)
             {
-                psource_fsd_FCE2[facei] = porientation_fac[facei] * pfsd[facei] * pfsd[facei] / (0.001)
+                psource_fsd_FCE2[facei] = porientation_fac[facei] * pfsd[facei] * pfsd[facei] / (this->small)
                         * this->beta_FSD_ * pSL0_FSD[facei];
             }
             else
@@ -1100,7 +1102,7 @@ void Foam::combustionModels::FSD<ReactionThermo>::retrieval()
                 pI_s_FSD[facei] = 0.0; 
             }
 
-            if (pn_FSD_mod[facei] > this->small)
+            if (pn_FSD_mod[facei] > this->smallest)
             {
             pSdA[facei] = prho_u[facei] * pSL0_FSD[facei]
                             * pI_s_FSD[facei] / prho[facei]  

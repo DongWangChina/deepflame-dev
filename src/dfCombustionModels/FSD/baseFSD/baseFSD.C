@@ -1007,7 +1007,7 @@ void Foam::combustionModels::baseFSD<ReactionThermo>::transport()
     {
         cvarEqn.relax();
     }
-    cvarEqn.solve();
+    // cvarEqn.solve();
     cvar_.min(cvarMax_);
     cvar_.max(cvarMin_);    
 
@@ -1032,7 +1032,7 @@ void Foam::combustionModels::baseFSD<ReactionThermo>::transport()
         ZcvarEqn.relax();
     }
 
-    ZcvarEqn.solve();
+    // ZcvarEqn.solve();
 
     Zcvar_.min(ZcvarMax_);
     Zcvar_.max(ZcvarMin_);
