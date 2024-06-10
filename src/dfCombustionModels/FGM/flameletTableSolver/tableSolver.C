@@ -64,13 +64,13 @@ H_ox("H_ox",dimensionSet(0,2,-2,0,0,0,0),Hox)
 
         tableNames_ = wordList({"omgc_Tb3", "cOc_Tb3", "ZOc_Tb3", "cpe_Tb3", "mwt_Tb3", "hiyi_Tb3", "Tf_Tb3", "nu_Tb3", "cp_mass_Tb3", "kappa_Tb3"});
 
-        if(NS == 8+NYomega)
+        if(NS == 10+NYomega)
         {
             scaledPV_ = true;
             Info<< "=============== Using scaled PV ==============="
                 << "\n" << endl;
         }
-        else if(NS == 9+NYomega)
+        else if(NS == 11+NYomega)
         {
             scaledPV_ = false;
             tableNames_.append("Ycmax_Tb3");

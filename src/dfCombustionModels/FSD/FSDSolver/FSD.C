@@ -975,7 +975,8 @@ void Foam::combustionModels::FSD<ReactionThermo>::retrieval()
             this->I_s_FSDCells_[celli] = 0.0;  
         }
 
-        if (n_FSD_mod.primitiveFieldRef()[celli] > this->smallest)
+        if ((n_FSD_mod.primitiveFieldRef()[celli] > this->smallest) 
+            or (this->cCells_[celli] > this->small && this->fsdCells_[celli] > 0.1))
         {
         this->SdACells_[celli] = this->rho_uCells_[celli] * this->SL0_FSDCells_[celli]
                 * this->I_s_FSDCells_[celli] / this->rho_[celli]  
@@ -1102,7 +1103,8 @@ void Foam::combustionModels::FSD<ReactionThermo>::retrieval()
                 pI_s_FSD[facei] = 0.0; 
             }
 
-            if (pn_FSD_mod[facei] > this->smallest)
+            if ( (pn_FSD_mod[facei] > this->smallest) 
+                or (pc[facei] > this->small && pfsd[facei] > 0.1))
             {
             pSdA[facei] = prho_u[facei] * pSL0_FSD[facei]
                             * pI_s_FSD[facei] / prho[facei]  
