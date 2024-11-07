@@ -121,13 +121,13 @@ void Foam::combustionModels::FSD<ReactionThermo>::retrieval()
         {
             this->chi_ZCells_[celli] = this->sdrLRXmodel(2.0,mutCells[celli]
                 /this->rho_[celli],this->deltaCells_[celli],this->ZvarCells_[celli]); 
-            this->chi_ZcCells_[celli] = this->sdrLRXmodel(2.0,mutCells[celli]
-                                  /this->rho_[celli],this->deltaCells_[celli],this->ZcvarCells_[celli]); 
+            // this->chi_ZcCells_[celli] = this->sdrLRXmodel(2.0,mutCells[celli]
+            //                       /this->rho_[celli],this->deltaCells_[celli],this->ZcvarCells_[celli]); 
         }
         else
         {
             this->chi_ZCells_[celli] = 1.0*epsilonCells[celli]/kCells[celli] *this->ZvarCells_[celli]; 
-            this->chi_ZcCells_[celli] = 1.0*epsilonCells[celli]/kCells[celli] *this->ZcvarCells_[celli]; 
+            // this->chi_ZcCells_[celli] = 1.0*epsilonCells[celli]/kCells[celli] *this->ZcvarCells_[celli]; 
         }
 
         double hLoss = ( this->ZCells_[celli]*(this->Hfu-this->Hox) + this->Hox ) - this->HCells_[celli];
@@ -172,8 +172,8 @@ void Foam::combustionModels::FSD<ReactionThermo>::retrieval()
 
             if (this->isLES_)
             {
-                this->chi_cCells_[celli] = this->sdrFLRmodel(this->cvarCells_[celli],this->magUPrimeCells_[celli],
-                            this->deltaCells_[celli],sl,dl,tau,kc_s,this->betacCells_[celli]);
+                // this->chi_cCells_[celli] = this->sdrFLRmodel(this->cvarCells_[celli],this->magUPrimeCells_[celli],
+                //             this->deltaCells_[celli],sl,dl,tau,kc_s,this->betacCells_[celli]);
 
                 this->omega_cCells_[celli] =
                     this->lookup6d(this->NH,this->h_Tb3,hLoss,
@@ -182,33 +182,33 @@ void Foam::combustionModels::FSD<ReactionThermo>::retrieval()
                                 this->NGZ,this->gz_Tb3,gz,
                                 this->NGC,this->gc_Tb3,gc,
                                 this->NZC,this->gzc_Tb3,gcz,
-                                this->tableValues_[0])
-                    + (
-                        tableSolver_FSD::scaledPV_
-                        ? (this->chi_ZCells_[celli] + this->chi_ZfltdCells_[celli])*this->cCells_[celli]
-                            *this->lookup3d(this->NH,this->h_Tb3,hLoss,this->NZ,this->z_Tb3,this->ZCells_[celli],
-                                        this->NGZ,this->gz_Tb3,gz,this->d2Yeq_Tb2)
-                            + 2.0*this->chi_ZcCells_[celli]*this->lookup3d(this->NH,this->h_Tb3,hLoss,
-                                                    this->NZ,this->z_Tb3,this->ZCells_[celli],
-                                                    this->NGZ,this->gz_Tb3,gz,this->d1Yeq_Tb2)
-                        : 0.0
-                    );   
+                                this->tableValues_[0])  ;
+                    // + (
+                    //     tableSolver_FSD::scaledPV_
+                    //     ? (this->chi_ZCells_[celli] + this->chi_ZfltdCells_[celli])*this->cCells_[celli]
+                    //         *this->lookup3d(this->NH,this->h_Tb3,hLoss,this->NZ,this->z_Tb3,this->ZCells_[celli],
+                    //                     this->NGZ,this->gz_Tb3,gz,this->d2Yeq_Tb2)
+                    //         // + 2.0*this->chi_ZcCells_[celli]*this->lookup3d(this->NH,this->h_Tb3,hLoss,
+                    //         //                         this->NZ,this->z_Tb3,this->ZCells_[celli],
+                    //         //                         this->NGZ,this->gz_Tb3,gz,this->d1Yeq_Tb2)
+                    //     : 0.0
+                    // );   
 
                 this->omega_c_chiZCells_[celli] = tableSolver_FSD::scaledPV_
                             ? (this->chi_ZCells_[celli] + this->chi_ZfltdCells_[celli])*this->cCells_[celli]
                                 *this->lookup3d(this->NH,this->h_Tb3,hLoss,this->NZ,this->z_Tb3,this->ZCells_[celli],
                                             this->NGZ,this->gz_Tb3,gz,this->d2Yeq_Tb2)
-                                + 2.0*this->chi_ZcCells_[celli]*this->lookup3d(this->NH,this->h_Tb3,hLoss,
-                                                        this->NZ,this->z_Tb3,this->ZCells_[celli],
-                                                        this->NGZ,this->gz_Tb3,gz,this->d1Yeq_Tb2)
+                                // + 2.0*this->chi_ZcCells_[celli]*this->lookup3d(this->NH,this->h_Tb3,hLoss,
+                                //                         this->NZ,this->z_Tb3,this->ZCells_[celli],
+                                //                         this->NGZ,this->gz_Tb3,gz,this->d1Yeq_Tb2)
                             : 0.0;
             }
             else
             {
-                this->chi_cCells_[celli] =
-                    this->RANSsdrFLRmodel(this->cvarCells_[celli],epsilonCells[celli],
-                        kCells[celli],muCells[celli]/this->rho_[celli],
-                        sl,dl,tau,kc_s,this->rho_[celli]);  
+                // this->chi_cCells_[celli] =
+                //     this->RANSsdrFLRmodel(this->cvarCells_[celli],epsilonCells[celli],
+                //         kCells[celli],muCells[celli]/this->rho_[celli],
+                //         sl,dl,tau,kc_s,this->rho_[celli]);  
 
                 this->omega_cCells_[celli] =
                     this->lookup6d(this->NH,this->h_Tb3,hLoss,
@@ -217,17 +217,17 @@ void Foam::combustionModels::FSD<ReactionThermo>::retrieval()
                                 this->NGZ,this->gz_Tb3,gz,
                                 this->NGC,this->gc_Tb3,gc,
                                 this->NZC,this->gzc_Tb3,gcz,
-                                this->tableValues_[0])
-                    + (
-                        tableSolver_FSD::scaledPV_
-                        ? (  this->chi_ZCells_[celli]*this->cCells_[celli]
-                            *this->lookup3d(this->NH,this->h_Tb3,hLoss,this->NZ,this->z_Tb3,this->ZCells_[celli],
-                                        this->NGZ,this->gz_Tb3,gz,this->d2Yeq_Tb2) )
-                            // + 2.0*this->chi_ZcCells_[celli]*this->lookup3d(this->NH,this->h_Tb3,hLoss,
-                            //                             this->NZ,this->z_Tb3,this->ZCells_[celli],
-                            //                             this->NGZ,this->gz_Tb3,gz,this->d1Yeq_Tb2)  )
-                        : 0.0
-                    );   
+                                this->tableValues_[0])  ;
+                    // + (
+                    //     tableSolver_FSD::scaledPV_
+                    //     ? (  this->chi_ZCells_[celli]*this->cCells_[celli]
+                    //         *this->lookup3d(this->NH,this->h_Tb3,hLoss,this->NZ,this->z_Tb3,this->ZCells_[celli],
+                    //                     this->NGZ,this->gz_Tb3,gz,this->d2Yeq_Tb2) )
+                    //         // + 2.0*this->chi_ZcCells_[celli]*this->lookup3d(this->NH,this->h_Tb3,hLoss,
+                    //         //                             this->NZ,this->z_Tb3,this->ZCells_[celli],
+                    //         //                             this->NGZ,this->gz_Tb3,gz,this->d1Yeq_Tb2)  )
+                    //     : 0.0
+                    // );   
 
                 this->omega_c_chiZCells_[celli] = tableSolver_FSD::scaledPV_
                         ? (  this->chi_ZCells_[celli]*this->cCells_[celli]
@@ -257,15 +257,15 @@ void Foam::combustionModels::FSD<ReactionThermo>::retrieval()
         }           
         else
         {
-            if(this->isLES_)
-            {
-                this->chi_cCells_[celli] = this->sdrLRXmodel(2.0,mutCells[celli]
-                           /this->rho_[celli],this->deltaCells_[celli],this->cvarCells_[celli]);     
-            }
-            else
-            {
-                this->chi_cCells_[celli] = 1.0*epsilonCells[celli]/kCells[celli]*this->cvarCells_[celli]; 
-            }
+            // if(this->isLES_)
+            // {
+            //     this->chi_cCells_[celli] = this->sdrLRXmodel(2.0,mutCells[celli]
+            //                /this->rho_[celli],this->deltaCells_[celli],this->cvarCells_[celli]);     
+            // }
+            // else
+            // {
+            //     this->chi_cCells_[celli] = 1.0*epsilonCells[celli]/kCells[celli]*this->cvarCells_[celli]; 
+            // }
 
             this->omega_cCells_[celli] = 0.0;
             this->cOmega_cCells_[celli] = 0.0;
@@ -538,14 +538,14 @@ void Foam::combustionModels::FSD<ReactionThermo>::retrieval()
             {
                 pchi_Z[facei] = sdrLRXmodel(2.0,pmut[facei]
                     /this->rho_[facei],this->deltaCells_[cellID],pZvar[facei]);
-                pchi_Zc[facei]= sdrLRXmodel(2.0,pmut[facei]
-                    /this->rho_[facei],this->deltaCells_[cellID],pZcvar[facei]); 
+                // pchi_Zc[facei]= sdrLRXmodel(2.0,pmut[facei]
+                //     /this->rho_[facei],this->deltaCells_[cellID],pZcvar[facei]); 
             }
             else
             {
                 pchi_Z[facei] = 1.0*pepsilon[facei]/pk[facei] *pZvar[facei]; 
 
-                pchi_Zc[facei]= 1.0*pepsilon[facei]/pk[facei] *pZcvar[facei]; 
+                // pchi_Zc[facei]= 1.0*pepsilon[facei]/pk[facei] *pZcvar[facei]; 
             }
 
             double gz{this->cal_gvar(pZ[facei],pZvar[facei])};  
@@ -579,18 +579,18 @@ void Foam::combustionModels::FSD<ReactionThermo>::retrieval()
                 double sl = this->lookup2d(this->NH,this->h_Tb3,hLoss,this->NZL,this->z_Tb5,pZ[facei],this->sl_Tb5);      
                 double dl = this->lookup2d(this->NH,this->h_Tb3,hLoss,this->NZL,this->z_Tb5,pZ[facei],this->th_Tb5);      
 
-                if(this->isLES_)
-                {
-                    pchi_c[facei] =  sdrFLRmodel(pcvar[facei],pmagUPrime[facei],
-                                      this->deltaCells_[cellID],sl,dl,tau,kc_s,this->betacCells_[cellID]);   
-                }
-                else
-                {
-                    pchi_c[facei] =
-                        this->RANSsdrFLRmodel(pcvar[facei],pepsilon[facei],
-                            pk[facei],pmu[facei]/prho[facei],
-                            sl,dl,tau,kc_s,prho[facei]);
-                }
+                // if(this->isLES_)
+                // {
+                //     pchi_c[facei] =  sdrFLRmodel(pcvar[facei],pmagUPrime[facei],
+                //                       this->deltaCells_[cellID],sl,dl,tau,kc_s,this->betacCells_[cellID]);   
+                // }
+                // else
+                // {
+                //     pchi_c[facei] =
+                //         this->RANSsdrFLRmodel(pcvar[facei],pepsilon[facei],
+                //             pk[facei],pmu[facei]/prho[facei],
+                //             sl,dl,tau,kc_s,prho[facei]);
+                // }
 
 
                 if (this->isLES_)
@@ -602,16 +602,16 @@ void Foam::combustionModels::FSD<ReactionThermo>::retrieval()
                                         this->NGZ,this->gz_Tb3,gz,
                                         this->NGC,this->gc_Tb3,gc,
                                         this->NZC,this->gzc_Tb3,gcz,
-                                        this->tableValues_[0])    
-                        + (
-                                tableSolver_FSD::scaledPV_
-                                ? (pchi_Z[facei]+ pchi_Zfltd[facei])*pc[facei]
-                                    *this->lookup3d(this->NH,this->h_Tb3,hLoss,this->NZ,this->z_Tb3,pZ[facei],
-                                                    this->NGZ,this->gz_Tb3,gz,this->d2Yeq_Tb2)
-                                    // + 2.0*pchi_Zc[facei]*this->lookup3d(this->NH,this->h_Tb3,hLoss,this->NZ,this->z_Tb3,pZ[facei],
-                                    // this->NGZ,this->gz_Tb3,gz,this->d1Yeq_Tb2)
-                                : 0.0
-                            ); 
+                                        this->tableValues_[0])    ;
+                        // + (
+                        //         tableSolver_FSD::scaledPV_
+                        //         ? (pchi_Z[facei]+ pchi_Zfltd[facei])*pc[facei]
+                        //             *this->lookup3d(this->NH,this->h_Tb3,hLoss,this->NZ,this->z_Tb3,pZ[facei],
+                        //                             this->NGZ,this->gz_Tb3,gz,this->d2Yeq_Tb2)
+                        //             // + 2.0*pchi_Zc[facei]*this->lookup3d(this->NH,this->h_Tb3,hLoss,this->NZ,this->z_Tb3,pZ[facei],
+                        //             // this->NGZ,this->gz_Tb3,gz,this->d1Yeq_Tb2)
+                        //         : 0.0
+                        //     ); 
 
                     pomega_c_chiZ[facei] = tableSolver_FSD::scaledPV_
                                 ? (pchi_Z[facei]+ pchi_Zfltd[facei])*pc[facei]
@@ -630,16 +630,16 @@ void Foam::combustionModels::FSD<ReactionThermo>::retrieval()
                                         this->NGZ,this->gz_Tb3,gz,
                                         this->NGC,this->gc_Tb3,gc,
                                         this->NZC,this->gzc_Tb3,gcz,
-                                        this->tableValues_[0])   
-                        + (
-                                tableSolver_FSD::scaledPV_
-                                ? ( pchi_Z[facei]*pc[facei]
-                                *this->lookup3d(this->NH,this->h_Tb3,hLoss,this->NZ,this->z_Tb3,pZ[facei],
-                                                this->NGZ,this->gz_Tb3,gz,this->d2Yeq_Tb2) )
-                                // + 2.0*pchi_Zc[facei]*this->lookup3d(this->NH,this->h_Tb3,hLoss,this->NZ,this->z_Tb3,pZ[facei],
-                                //     this->NGZ,this->gz_Tb3,gz,this->d1Yeq_Tb2)  )
-                                : 0.0
-                            );  
+                                        this->tableValues_[0])  ; 
+                        // + (
+                        //         tableSolver_FSD::scaledPV_
+                        //         ? ( pchi_Z[facei]*pc[facei]
+                        //         *this->lookup3d(this->NH,this->h_Tb3,hLoss,this->NZ,this->z_Tb3,pZ[facei],
+                        //                         this->NGZ,this->gz_Tb3,gz,this->d2Yeq_Tb2) )
+                        //         // + 2.0*pchi_Zc[facei]*this->lookup3d(this->NH,this->h_Tb3,hLoss,this->NZ,this->z_Tb3,pZ[facei],
+                        //         //     this->NGZ,this->gz_Tb3,gz,this->d1Yeq_Tb2)  )
+                        //         : 0.0
+                        //     );  
 
                     pomega_c_chiZ[facei] = tableSolver_FSD::scaledPV_
                                 ? ( pchi_Z[facei]*pc[facei]
@@ -666,15 +666,15 @@ void Foam::combustionModels::FSD<ReactionThermo>::retrieval()
             }
             else
             {
-                if(this->isLES_)
-                {
-                    pchi_c[facei] = sdrLRXmodel(2.0,pmut[facei]
-                        /this->rho_[facei],this->deltaCells_[cellID],pcvar[facei]);                    
-                }
-                else
-                {
-                    pchi_c[facei] = 1.0*pepsilon[facei]/(pk[facei]+SMALL)*pcvar[facei];    
-                }
+                // if(this->isLES_)
+                // {
+                //     pchi_c[facei] = sdrLRXmodel(2.0,pmut[facei]
+                //         /this->rho_[facei],this->deltaCells_[cellID],pcvar[facei]);                    
+                // }
+                // else
+                // {
+                //     pchi_c[facei] = 1.0*pepsilon[facei]/(pk[facei]+SMALL)*pcvar[facei];    
+                // }
 
                 pomega_c[facei] = 0.0;
                 pcOmega_c[facei] = 0.0;
@@ -894,13 +894,13 @@ void Foam::combustionModels::FSD<ReactionThermo>::retrieval()
                     + (1.0 - (this->n_FSD_ & this->n_FSD_)) / 3.0 * this->IField_;
 
     this->Ka_temp_ = fvc::div(this->U_) - ( NTensorField_ && fvc::grad(this->U_) )
-                        + this->gamma_k_ * Foam::sqrt(k) / (50.0*(this->delta_ + this->small * this->IField_m1_)) ;
+                        + this->gamma_k_ * Foam::sqrt(k) / (5.0*(this->delta_ + this->small * this->IField_m1_)) ;
 
     this->Ka_temp_.max(0.0);
 
     this->Ka_temp1_ = fvc::div(this->U_);
     this->Ka_temp2_ =  - ( NTensorField_ && fvc::grad(this->U_) );
-    this->Ka_temp3_ = this->gamma_k_ * Foam::sqrt(k) / (50.0*(this->delta_ + this->small * this->IField_m1_)) ;
+    this->Ka_temp3_ = this->gamma_k_ * Foam::sqrt(k) / (5.0*(this->delta_ + this->small * this->IField_m1_)) ;
 
     // scalar maxSL0_ = max(this->SL0_FSDCells_);
 
@@ -911,6 +911,8 @@ void Foam::combustionModels::FSD<ReactionThermo>::retrieval()
     // volScalarField Sd_temp = this->omega_c_ + ( this->n_FSD_ & fvc::grad(mu/this->Sc_ * this->n_FSD_ & gradC_) );
 
     volScalarField n_FSD_mod = Foam::mag(this->n_FSD_);
+
+    double l_t_ref = 0.0105;
 
     forAll(this->rho_, celli)  
     {
@@ -955,15 +957,28 @@ void Foam::combustionModels::FSD<ReactionThermo>::retrieval()
         {
             this->KaCells_[celli] = 0.0;
         }
+
+        if ( (this->SL0_FSDCells_[celli] > this->small) 
+            // and (maxSL0_ > this->small)
+            and this->ZCells_[celli] >= ZKl && this->ZCells_[celli] <= ZKr  )
+        {
+            this->Ka1Cells_[celli] = 0.157 / 1.0 * sqrt(this->p_[celli]/101325.0) 
+                * pow(u_fluctCells[celli] / this->SL0_FSDCells_[celli], 2)
+                * pow(u_fluctCells[celli] * l_t_ref / muCells[celli] * this->rho_[celli],-0.5);
+        }
+        else
+        {
+            this->Ka1Cells_[celli] = 0.0;
+        }
         
 
         if (this->ZCells_[celli] >= Zl && this->ZCells_[celli] <= Zr
             && this->combustion_ && this->cCells_[celli] > this->small)  
         {
-            this->I_s_FSDCells_[celli] = 1.0;
-            // this->I_s_FSDCells_[celli] = this->lookup2d(this->NZK, this->ZK_Tb3, this->ZCells_[celli],
-            //                                     this->NK, this->K_Tb3, this->KaCells_[celli],
-            //                                     this->I0_Tab);
+            // this->I_s_FSDCells_[celli] = 1.0;
+            this->I_s_FSDCells_[celli] = this->lookup2d(this->NZK, this->ZK_Tb3, this->ZCells_[celli],
+                                                this->NK, this->K_Tb3, this->Ka1Cells_[celli],
+                                                this->I0_Tab);
 
             // if (this->I_s_FSDCells_[celli] < 1.0)  
             // {
@@ -1015,6 +1030,8 @@ void Foam::combustionModels::FSD<ReactionThermo>::retrieval()
     volScalarField::Boundary& SdABF = this->SdA_.boundaryFieldRef();
     volScalarField::Boundary& orientation_facBF = orientation_fac_.boundaryFieldRef();
 
+    volScalarField::Boundary& Ka1BF = this->Ka1_.boundaryFieldRef();
+
     // volScalarField::Boundary& Sd_tempBF = Sd_temp.boundaryFieldRef();
     volScalarField::Boundary& n_FSD_modBF = n_FSD_mod.boundaryFieldRef();
 
@@ -1024,6 +1041,7 @@ void Foam::combustionModels::FSD<ReactionThermo>::retrieval()
         fvPatchScalarField& pZ = ZBF[patchi];
         fvPatchScalarField& pc = cBF[patchi];
         fvPatchScalarField& pKa = KaBF[patchi];
+        fvPatchScalarField& pKa1 = Ka1BF[patchi];
         fvPatchScalarField& pKa_temp = Ka_tempBF[patchi];
         fvPatchScalarField& psource_fsd_FCE2 = source_fsd_FCE2BF[patchi];
         fvPatchScalarField& pI_s_FSD = I_s_FSDBF[patchi];
@@ -1043,6 +1061,9 @@ void Foam::combustionModels::FSD<ReactionThermo>::retrieval()
 
         fvPatchScalarField& pn_FSD_mod = n_FSD_modBF[patchi];
         // fvPatchScalarField& pomega_c = omega_cBF[patchi];
+
+        fvPatchScalarField& pu_fluct = u_fluctBF[patchi];
+        fvPatchScalarField pp_ = this->p_.boundaryField()[patchi];
 
         forAll(pZ, facei)
         {
@@ -1085,13 +1106,26 @@ void Foam::combustionModels::FSD<ReactionThermo>::retrieval()
                 pKa[facei] = 0.0;
             }
 
+            if ( ( pSL0_FSD[facei] > this->small ) 
+                // and (maxSL0_ > this->small) 
+                and pZ[facei] >= ZKl && pZ[facei] <= ZKr)
+            {
+                pKa1[facei] = 0.157 / 1.0 * sqrt(pp_[facei]/101325.0)
+                            * pow(pu_fluct[facei] / pSL0_FSD[facei], 2)
+                            * pow(pu_fluct[facei] * l_t_ref / pmu[facei] * prho[facei], -0.5);
+            }
+            else
+            {
+                pKa1[facei] = 0.0;
+            }
+
             if(pZ[facei] >= Zl && pZ[facei] <= Zr
                 && this->combustion_ && pc[facei] > this->small) 
             {
-                pI_s_FSD[facei] = 1.0;
-                // pI_s_FSD[facei] = this->lookup2d(this->NZK, this->ZK_Tb3, pZ[facei],
-                //                                 this->NK, this->K_Tb3, pKa[facei],
-                //                                 this->I0_Tab);
+                // pI_s_FSD[facei] = 1.0;
+                pI_s_FSD[facei] = this->lookup2d(this->NZK, this->ZK_Tb3, pZ[facei],
+                                                this->NK, this->K_Tb3, pKa1[facei],
+                                                this->I0_Tab);
 
                 // if (pI_s_FSD[facei] < 1.0)
                 // {
@@ -1146,6 +1180,8 @@ void Foam::combustionModels::FSD<ReactionThermo>::retrieval()
 
     this->source_fsd_flaProp_ = fvc::laplacian(this->SdA_, this->c_);
 
+     this->source_fsd_FCE1_ = this->SdA_ * this->fsd_ * fvc::div(this->n_FSD_);
+
     // this->source_fsd_flaProp_.max(0.0);  // ？？
 
     forAll(this->rho_, celli)  
@@ -1155,13 +1191,21 @@ void Foam::combustionModels::FSD<ReactionThermo>::retrieval()
         {
             this->source_fsd_flaProp_.primitiveFieldRef()[celli] = 0.0;
         }
+
+        if (this->omega_cCells_[celli] < 1.0)
+        {
+            this->source_fsd_FCE1_[celli] = 0.0;
+        }
     }
     
     volScalarField::Boundary& source_fsd_flaPropBF = this->source_fsd_flaProp_.boundaryFieldRef();
+    volScalarField::Boundary& source_fsd_FCE1BF = this->source_fsd_FCE1_.boundaryFieldRef();
 
     forAll(this->rho_.boundaryField(), patchi)
     {
         fvPatchScalarField& psource_fsd_flaProp = source_fsd_flaPropBF[patchi];
+        fvPatchScalarField& psource_fsd_FCE1 = source_fsd_FCE1BF[patchi];
+        fvPatchScalarField& pomega_c = omega_cBF[patchi];
         fvPatchScalarField& pc = cBF[patchi];
         fvPatchScalarField& pfsd = fsdBF[patchi];
 
@@ -1171,11 +1215,16 @@ void Foam::combustionModels::FSD<ReactionThermo>::retrieval()
             {
                 psource_fsd_flaProp[facei] = 0.0;
             }
+
+            if (pomega_c[facei] < 1.0)
+            {
+                psource_fsd_FCE1[facei] = 0.0;
+            }
         }
     }
 
 
-    this->source_fsd_FCE1_ = this->SdA_ * this->fsd_ * fvc::div(this->n_FSD_);
+    // this->source_fsd_FCE1_ = this->SdA_ * this->fsd_ * fvc::div(this->n_FSD_);
 
 
 

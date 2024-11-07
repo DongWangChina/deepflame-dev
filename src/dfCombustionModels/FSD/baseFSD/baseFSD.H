@@ -150,6 +150,9 @@ class baseFSD
     //- Kalovitz factor
     volScalarField Ka_;
 
+    //- Kalovitz factor
+    volScalarField Ka1_;
+
     //- temp field to save Ka_, s^{-1}
     volScalarField Ka_temp_;
 
@@ -237,6 +240,7 @@ class baseFSD
     scalarField& cCells_;
     scalarField& fsdCells_;
     scalarField& KaCells_;
+    scalarField& Ka1Cells_;
     scalarField& omega_cCells_;
     scalarField& cOmega_cCells_;
     scalarField& ZOmega_cCells_;

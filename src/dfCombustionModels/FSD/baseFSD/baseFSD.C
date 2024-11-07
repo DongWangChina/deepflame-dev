@@ -268,6 +268,19 @@ Foam::combustionModels::baseFSD<ReactionThermo>::baseFSD
         this->mesh(),
         dimensionedScalar("Ka",dimensionSet(0,0,0,0,0,0,0),0.0)
     ), 
+    Ka1_
+    (
+        IOobject
+        (
+            "Ka1",
+            this->mesh().time().timeName(),
+            this->mesh(),
+            IOobject::NO_READ,
+            IOobject::AUTO_WRITE
+        ),
+        this->mesh(),
+        dimensionedScalar("Ka1",dimensionSet(0,0,0,0,0,0,0),0.0)
+    ), 
     Ka_temp_
     (
         IOobject
@@ -644,6 +657,7 @@ Foam::combustionModels::baseFSD<ReactionThermo>::baseFSD
     cCells_(c_.primitiveFieldRef()),
     fsdCells_(fsd_.primitiveFieldRef()),
     KaCells_(Ka_.primitiveFieldRef()),
+    Ka1Cells_(Ka1_.primitiveFieldRef()),
     omega_cCells_(omega_c_.primitiveFieldRef()), 
     cOmega_cCells_(cOmega_c_.primitiveFieldRef()),
     ZOmega_cCells_(ZOmega_c_.primitiveFieldRef()),
@@ -988,54 +1002,54 @@ void Foam::combustionModels::baseFSD<ReactionThermo>::transport()
     Zvar_.max(ZvarMin_); 
 
 
-    // Solve the progress variable variance transport equation
-    fvScalarMatrix cvarEqn
-    (
-        fvm::ddt(rho_,cvar_)
-        +(
-            buffer_
-            ? scalarUWConvection->fvmDiv(phi_, cvar_)
-            : fvm::div(phi_, cvar_)
-        )
-        -fvm::laplacian( mut/Sct_ + mu/Sc_, cvar_)
-        -(2.0*mut/Sct_*(fvc::grad(c_) & fvc::grad(c_)))
-        +2.0*(rho_*chi_c_)
-        -2.0*(cOmega_c_-omega_c_*c_)  
-    ); 
+    // // Solve the progress variable variance transport equation
+    // fvScalarMatrix cvarEqn
+    // (
+    //     fvm::ddt(rho_,cvar_)
+    //     +(
+    //         buffer_
+    //         ? scalarUWConvection->fvmDiv(phi_, cvar_)
+    //         : fvm::div(phi_, cvar_)
+    //     )
+    //     -fvm::laplacian( mut/Sct_ + mu/Sc_, cvar_)
+    //     -(2.0*mut/Sct_*(fvc::grad(c_) & fvc::grad(c_)))
+    //     +2.0*(rho_*chi_c_)
+    //     -2.0*(cOmega_c_-omega_c_*c_)  
+    // ); 
 
-    if(relaxation_)
-    {
-        cvarEqn.relax();
-    }
-    // cvarEqn.solve();
-    cvar_.min(cvarMax_);
-    cvar_.max(cvarMin_);    
+    // if(relaxation_)
+    // {
+    //     cvarEqn.relax();
+    // }
+    // // cvarEqn.solve();
+    // cvar_.min(cvarMax_);
+    // cvar_.max(cvarMin_);    
 
 
-    // Solve the covariance transport equation
-    fvScalarMatrix ZcvarEqn
-    (
-        fvm::ddt(rho_,Zcvar_)
-        +(
-            buffer_
-            ?  scalarUWConvection->fvmDiv(phi_, Zcvar_)
-            :  fvm::div(phi_, Zcvar_)
-        )
-        -fvm::laplacian( mut/Sct_+mu/Sc_, Zcvar_)
-        -(2.0*mut/Sct_*(fvc::grad(Z_) & fvc::grad(c_)))
-        +(2.0*rho_*chi_Zc_)  
-        -1.0*(ZOmega_c_-omega_c_*Z_)  
-    );
+    // // Solve the covariance transport equation
+    // fvScalarMatrix ZcvarEqn
+    // (
+    //     fvm::ddt(rho_,Zcvar_)
+    //     +(
+    //         buffer_
+    //         ?  scalarUWConvection->fvmDiv(phi_, Zcvar_)
+    //         :  fvm::div(phi_, Zcvar_)
+    //     )
+    //     -fvm::laplacian( mut/Sct_+mu/Sc_, Zcvar_)
+    //     -(2.0*mut/Sct_*(fvc::grad(Z_) & fvc::grad(c_)))
+    //     +(2.0*rho_*chi_Zc_)  
+    //     -1.0*(ZOmega_c_-omega_c_*Z_)  
+    // );
 
-    if(relaxation_)
-    {
-        ZcvarEqn.relax();
-    }
+    // if(relaxation_)
+    // {
+    //     ZcvarEqn.relax();
+    // }
 
-    // ZcvarEqn.solve();
+    // // ZcvarEqn.solve();
 
-    Zcvar_.min(ZcvarMax_);
-    Zcvar_.max(ZcvarMin_);
+    // Zcvar_.min(ZcvarMax_);
+    // Zcvar_.max(ZcvarMin_);
 
 
     // Solve the FSD transport equation

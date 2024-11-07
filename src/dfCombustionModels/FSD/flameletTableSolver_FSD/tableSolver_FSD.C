@@ -565,7 +565,7 @@ double Foam::tableSolver_FSD::interp2d
         result = 0.0;
         for(i1=0; i1<2; i1++)
         {
-            if(i1 == 1) j1 = loc_h+1;
+            if(i1 == 1 and n1>1) j1 = loc_h+1;
             else j1 = loc_h;
 
             for(i2=0; i2<2; i2++)
@@ -597,7 +597,7 @@ double Foam::tableSolver_FSD::interp3d
     result = 0.0;
     for (i0=0; i0<2; i0++)
     {
-        if(i0 == 1) j0 = loc_h+1;
+        if(i0 == 1 and n0 > 1) j0 = loc_h+1;
         else j0 = loc_h;
 
         for(i1=0; i1<2; i1++)
