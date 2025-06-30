@@ -64,12 +64,15 @@ Description
 #include "basicThermo.H"
 #include "CombustionModel.H"
 
-// #define GPUSolverNew_
+#include "basicSprayCloud.H"
+#include "SLGThermo.H"
+
+//#define GPUSolver_
 // #define TIME
 // #define DEBUG_
 // #define SHOW_MEMINFO
 
-#ifdef GPUSolverNew_
+    #ifdef GPUSolver_
     #include "dfMatrixDataBase.H"
     #include "AmgXSolver.H"
     #include "dfUEqn.H"
@@ -153,6 +156,7 @@ int main(int argc, char *argv[])
     double time_monitor_Y = 0;
     double time_monitor_E = 0;
     double time_monitor_p = 0;
+    double time_monitor_parcels=0;
     double time_monitor_chemistry_correctThermo = 0;
     double time_monitor_turbulence_correct = 0;
     double time_monitor_chem = 0; // combustion correct
@@ -209,7 +213,7 @@ int main(int argc, char *argv[])
     }
 
     start1 = std::clock();
-#ifdef GPUSolverNew_
+#ifdef GPUSolver_
     int mpi_init_flag;
     checkMpiErrors(MPI_Initialized(&mpi_init_flag));
     if(mpi_init_flag) {
@@ -219,7 +223,7 @@ int main(int argc, char *argv[])
     DEBUG_TRACE;
 #endif
 
-#ifdef GPUSolverNew_
+#ifdef GPUSolver_
     createGPUUEqn(CanteraTorchProperties, U);
     createGPUYEqn(CanteraTorchProperties, Y, inertIndex);
     createGPUEEqn(CanteraTorchProperties, thermo.he(), K);
@@ -261,9 +265,22 @@ int main(int argc, char *argv[])
         runTime++;
 
         Info<< "Time = " << runTime.timeName() << nl << endl;
+
+        if (parcels.solution().active())
+        {
+            start = std::clock();
+
+            // Store the particle positions
+            parcels.storeGlobalPositions();
+
+            parcels.evolve();
+
+            end = std::clock();
+            time_monitor_parcels += double(end - start) / double(CLOCKS_PER_SEC);
+        }
         
         // store old time fields
-#ifdef GPUSolverNew_
+#ifdef GPUSolver_
         dfDataBase.preTimeStep();
 #endif
         clock_t loop_start = std::clock();
@@ -290,7 +307,11 @@ int main(int argc, char *argv[])
             start = std::clock();
             if (pimple.firstPimpleIter() && !pimple.simpleRho())
             {
+                #ifdef GPUSolver_
+                #include "rhoEqn_GPU.H"
+                #else
                 #include "rhoEqn.H"
+                #endif
             }
             end = std::clock();
             time_monitor_rho += double(end - start) / double(CLOCKS_PER_SEC);
@@ -325,7 +346,7 @@ int main(int argc, char *argv[])
                 time_monitor_E += double(end - start) / double(CLOCKS_PER_SEC);
 
             start = std::clock();
-            #ifdef GPUSolverNew_
+            #ifdef GPUSolver_
                 thermo_GPU.correctThermo();
                 thermo_GPU.sync();
             #if defined DEBUG_
@@ -433,7 +454,7 @@ int main(int argc, char *argv[])
                 combustion->correct();
             }
             // update T for debug
-            #ifdef GPUSolverNew_
+            #ifdef GPUSolver_
             double *h_T = dfDataBase.getFieldPointer("T", location::cpu, position::internal);
             double *h_boundary_T_tmp = new double[dfDataBase.num_boundary_surfaces];
             thermo_GPU.updateCPUT(h_T, h_boundary_T_tmp);
@@ -469,10 +490,10 @@ int main(int argc, char *argv[])
                 else
                 {
 
-                #if defined GPUSolverNew_
+                #if defined GPUSolver_
                     #include "pEqn_GPU.H"
                 #else
-                    #include "pEqn_CPU.H"
+                    #include "pEqn.H"
                 #endif
                 
                 }
@@ -492,7 +513,7 @@ int main(int argc, char *argv[])
         clock_t loop_end = std::clock();
         double loop_time = double(loop_end - loop_start) / double(CLOCKS_PER_SEC);
 
-#ifdef GPUSolverNew_
+#ifdef GPUSolver_
         thermo_GPU.updateRho();
         dfDataBase.postTimeStep();
 #if defined DEBUG_
@@ -502,7 +523,7 @@ int main(int argc, char *argv[])
         rho = thermo.rho();
 #endif
 
-#ifdef GPUSolverNew_
+#ifdef GPUSolver_
         // write U
         UEqn_GPU.postProcess();
         memcpy(&U[0][0], dfDataBase.h_u, dfDataBase.cell_value_vec_bytes);
@@ -518,6 +539,10 @@ int main(int argc, char *argv[])
         Info<< "Y Equations                  = " << time_monitor_Y - time_monitor_chem << " s" << endl;
         Info<< "E Equations                  = " << time_monitor_E << " s" << endl;
         Info<< "p Equations                  = " << time_monitor_p << " s" << endl;
+        if (parcels.solution().active())
+        {
+            Info<< "calculate parcels            = " << time_monitor_parcels << " s" << endl;
+        }
         Info<< "chemistry correctThermo      = " << time_monitor_chemistry_correctThermo << " s" << endl;
         Info<< "turbulence correct           = " << time_monitor_turbulence_correct << " s" << endl;
         Info<< "combustion correct(in Y)     = " << time_monitor_chem << " s" << endl;
@@ -570,7 +595,7 @@ int main(int argc, char *argv[])
         Info<< "ExecutionTime = " << runTime.elapsedCpuTime() << " s"
             << "  ClockTime = " << runTime.elapsedClockTime() << " s" << endl;
 
-#ifdef GPUSolverNew_
+#ifdef GPUSolver_
 #ifdef SHOW_MEMINFO
 	int rank = -1;
 	if (mpi_init_flag) {
@@ -660,7 +685,7 @@ int main(int argc, char *argv[])
 #endif
     }
 
-#ifdef GPUSolverNew_
+#ifdef GPUSolver_
     // clean cuda resources before main() exit.
     // the destruct order should be reversed from the creation order
     pEqn_GPU.cleanCudaResources();

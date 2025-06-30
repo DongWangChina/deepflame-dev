@@ -37,6 +37,11 @@ float T9 = readSandia(9,"2DSandia/data_T.xy");
 float T10 = readSandia(10,"2DSandia/data_T.xy");
 float T11 = readSandia(11,"2DSandia/data_T.xy");
 
+float readBomb(int k, string file);
+float aachenBomb1  = readBomb(158,"aachenBomb2D/data_T.xy");
+float aachenBomb2 =  readBomb(168,"aachenBomb2D/data_T.xy");
+float aachenBomb3 =  readBomb(174,"aachenBomb2D/data_T.xy");
+float aachenBomb4 =  readBomb(192,"aachenBomb2D/data_T.xy");
 
 
 TEST(corrtest,dfHighSpeedFoam){
@@ -44,16 +49,16 @@ TEST(corrtest,dfHighSpeedFoam){
 }
 
 TEST(corrtest,dfLowMachFoam_TGV){
-    EXPECT_FLOAT_EQ(TGV500,1532.92);   // compare the maximum temperature along y direction in 2D TGV after 500 time steps
-    EXPECT_FLOAT_EQ(TGV400,1297.64);   //  ..........400 time steps
-    EXPECT_FLOAT_EQ(TGV300,871.092);
-    EXPECT_FLOAT_EQ(TGV200,537.614);
-    EXPECT_FLOAT_EQ(TGV100,363.504);
+    EXPECT_FLOAT_EQ(TGV500,1535.03);   // compare the maximum temperature along y direction in 2D TGV after 500 time steps
+    EXPECT_FLOAT_EQ(TGV400,1298.64);   //  ..........400 time steps
+    EXPECT_FLOAT_EQ(TGV300,874.13098);
+    EXPECT_FLOAT_EQ(TGV200,538.34802);
+    EXPECT_FLOAT_EQ(TGV100,363.06601);
 }
 
 TEST(corrtest,2DSandia){
-    EXPECT_FLOAT_EQ(T1,307.93594);   
-    EXPECT_FLOAT_EQ(T2,311.34987);  
+    EXPECT_FLOAT_EQ(T1,307.93594);
+    EXPECT_FLOAT_EQ(T2,311.34987);
     EXPECT_FLOAT_EQ(T3,378.77716);
     EXPECT_FLOAT_EQ(T4,658.02573);
     EXPECT_FLOAT_EQ(T5,1106.6115);
@@ -65,18 +70,25 @@ TEST(corrtest,2DSandia){
     EXPECT_FLOAT_EQ(T11,1081.8983);
 }
 
+TEST(corrtest,dfLowMachFoam_2DaachenBomb){
+    EXPECT_NEAR(aachenBomb1,809.39398193359375,0.0001);
+    EXPECT_NEAR(aachenBomb2,1814.1099853515625,0.0001);
+    EXPECT_NEAR(aachenBomb3,912.61602783203125,0.0001);
+    EXPECT_NEAR(aachenBomb4,2492.31005859375,0.0001);
+}
+
 float readmaxTH2(){
     float a;
     string inFileName = "0DH2/T" ;
     ifstream inFile;
     inFile.open(inFileName.c_str());
 
-    if (inFile.is_open())  
+    if (inFile.is_open())
     {
         inFile.ignore(80);
         while (inFile >> a){
        }
-    
+
     }
     else { //Error message
         cerr << "Can't find input file " << inFileName << endl;
@@ -88,16 +100,16 @@ float readmaxTH2(){
 
 
 float readmidTH2(){
-    
+
     float a;
     float b;
     int i = 0;
-    
+
     string inFileName = "0DH2/T";
     ifstream inFile;
     inFile.open(inFileName.c_str());
 
-    if (inFile.is_open())  
+    if (inFile.is_open())
     {
         inFile.ignore(80);
         while (inFile >> a){
@@ -106,7 +118,7 @@ float readmidTH2(){
                 b = a;
             }
         }
-    
+
     }
     else { //Error message
         cerr << "Can't find input file " << inFileName << endl;
@@ -119,16 +131,16 @@ float readmidTH2(){
 
 
 float readTGV(int k, string file){
-    
+
     float a;
     float b;
     int i = 0;
-    
+
     string inFileName = file;
     ifstream inFile;
     inFile.open(inFileName.c_str());
 
-    if (inFile.is_open())  
+    if (inFile.is_open())
     {
         while (inFile >> a){
             i ++ ;
@@ -136,7 +148,7 @@ float readTGV(int k, string file){
                 b = a;
             }
         }
-    
+
     }
     else { //Error message
         cerr << "Can't find input file " << inFileName << endl;
@@ -166,7 +178,7 @@ float readHighSpeed(){
     ifstream inFile;
     inFile.open(inFileName.c_str());
 
-    if (inFile.is_open())  
+    if (inFile.is_open())
     {
         inFile.ignore(162);
         while(inFile >> t >> p >> minp >> dummy >> minloc>> minloc >> minloc >> dummy >> processor >> max >> dummy >> maxloc_x >> maxloc >> maxloc >> dummy >> processor){
@@ -179,15 +191,15 @@ float readHighSpeed(){
             }
         };
         //while (inFile >> t >> p >> minp >> minlocation >> processor >> max >> maxlocation >> processor2){
-       //} 
+       //}
         slope = (15*xysum-xsum*ysum)/(15*x2sum-xsum*xsum);
 
     }
     else { //Error message
         cerr << "Can't find input file " << inFileName << endl;
     }
-    
-    
+
+
     return slope;
 }
 
@@ -195,28 +207,57 @@ float readHighSpeed(){
 
 
 float readSandia(int k, string file){
-    
+
     float T,x;
     float b;
     int i = 0;
-    
+
     string inFileName = file;
     ifstream inFile;
     inFile.open(inFileName.c_str());
 
-    if (inFile.is_open())  
+    if (inFile.is_open())
     {
         while (inFile >> x >> T){
             i ++ ;
-            if (i == k){  
+            if (i == k){
                 b = T;
             }
         }
-    
+
     }
     else { //Error message
         cerr << "Can't find input file " << inFileName << endl;
     }
+
+    return b;
+}
+
+float readBomb(int k, string file){
+
+    float a;
+    float b;
+    int i = 0;
+
+    string inFileName = file;
+    ifstream inFile;
+    inFile.open(inFileName.c_str());
+
+    if (inFile.is_open())
+    {
+        while (inFile >> a){
+            i ++ ;
+            if (i == k){
+                b = a;
+            }
+        }
+
+    }
+    else { //Error message
+        cerr << "Can't find input file " << inFileName << endl;
+    }
+
+    cout << b << endl;
 
     return b;
 }
@@ -230,24 +271,24 @@ TEST(corrtest,flameSpeed){
 }
 
 float readflameSpeed(int k, string file){
-    
+
     float fs;
     float b;
     int i = 0;
-    
+
     string inFileName = file;
     ifstream inFile;
     inFile.open(inFileName.c_str());
 
-    if (inFile.is_open())  
+    if (inFile.is_open())
     {
         while (inFile >> fs){
             i ++ ;
-            if (i == k){  
+            if (i == k){
                 b = fs;
             }
         }
-    
+
     }
     else { //Error message
         cerr << "Can't find input file " << inFileName << endl;

@@ -94,6 +94,9 @@ public IOdictionary
         CanteraMixture& mixture_;
         std::shared_ptr<Cantera::ThermoPhase> CanteraGas_;
         std::shared_ptr<Cantera::Kinetics> CanteraKinetics_;
+        std::unique_ptr<Cantera::Reactor> react_;
+        std::unique_ptr<Cantera::ReactorNet> sim_;
+
         const fvMesh& mesh_;
         Switch chemistry_;
 
@@ -106,9 +109,9 @@ public IOdictionary
         // species mass diffusion coefficients, [kg/m/s]
         PtrList<volScalarField> rhoD_;
         // species absolute enthalpy, [J/kg]
-        PtrList<volScalarField> hai_;
+        PtrList<volScalarField> hei_;
         // species chemistry enthalpy, [J/kg]
-        scalarList hc_;         
+        scalarList hc_;
         // temp mass fraction
         mutable scalarList yTemp_;
         // temp mass diffusion coefficients
@@ -312,20 +315,17 @@ public:
 
         const volScalarField& rhoD(const label i) const {return rhoD_[i];}
 
-        const volScalarField& hai(const label i) {return hai_[i];}
-        
+        const volScalarField& hei(const label i) {return hei_[i];}
+
         const scalar & hci(const label i) {return hc_[i];}
 
-        // update T, psi, mu, alpha, rhoD, hai (if needed)
+        // update T, psi, mu, alpha, rhoD, hei (if needed)
         void correctThermo();
 
         ThermoType& thermo() {return thermo_;}
 
         const CanteraMixture& mixture() {return mixture_;}
 
-        void setEnergyName(word name){
-            mixture_.setEnergyName(name);
-        }
         void updateEnergy()
         {
             scalarField& heCells = thermo_.he().primitiveFieldRef();

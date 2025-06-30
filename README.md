@@ -21,12 +21,39 @@
 
 DeepFlame is a deep learning empowered computational fluid dynamics package for single or multiphase, laminar or turbulent, reacting flows at all speeds. It aims to provide an open-source platform to combine the individual strengths of [OpenFOAM](https://openfoam.org), [Cantera](https://cantera.org), and [PyTorch](https://pytorch.org/) libraries for deep learning assisted reacting flow simulations. It also has the scope to leverage the next-generation heterogenous supercomputing and AI acceleration infrastructures such as GPU and FPGA.
 
-The neural network models used in the tutorial examples can be found at– [AIS Square](https://www.aissquare.com/). To run DeepFlame with DNN, download the DNN model [DF-ODENet](https://www.aissquare.com/models/detail?pageType=models&name=DF-ODENet_DNNmodel&id=197) into the case folder you would like to run.
+The neural network models used in the tutorial examples can be found at– [AIS Square](https://www.aissquare.com/). To run DeepFlame with DNN, download the DNN model [DFODE](https://www.aissquare.com/models/detail?pageType=models&name=DF-ODENet_DNNmodel&id=197) into the case folder you would like to run.
 
 ## Documentation
 Detailed guide for installation and tutorials is available on [our documentation website](https://deepflame.deepmodeling.com).
 
 ## Features
+New in v1.6 (2025/5/30):
+- Add a new solver, dfSteadyFoam, a steady-state compressible flow solver. It supports turbulence and uses the SIMPLE algorithm to efficiently compute steady solutions
+- Extend energy model to support sensible enthalpy (hs) in addition to absolute enthalpy (ha) and internal energy (ea). Furthermore, T, h and cp can now be computed independently of Cantera, improving flexibility and removing external dependencies. `CANTERA_THERMO` is added in bashrc to control method to calculate h, cp and update T. `CANTERA_THERMO=1`(current default) means using Cantera and `CANTERA_THERMO=0` means using deepflame.
+- Improve install.sh by displaying system architecture (e.g., x86_64) after build for clearer platform information
+- Switch to sphinx-book-theme and update documentation build environment (Ubuntu 24.04, Python 3.12) for better appearance and compatibility
+- Add 2D Riemann problem example case
+
+New in v1.5 (2025/1/8):
+- Provide a new boundary condition, totalFlowRateAdvectiveDiffusion (adopted from OpenFOAM v7), which accounts for diffusion effects at the boundary
+- Develop a new solver, `dfBuoyancyFoam`(adopted from fireFoam in OpenFOAM v7), a transient, compressible solver designed to model turbulent reacting flows incorporating buoyancy effects
+- Add radiation models, which are integrated into the current `dfBuoyancyFoam` solver, and can be incorporated into other solvers if needed
+- Add new combustion models (including infinitelyFastChemistry and eddyDissipationModel) to the `dfBuoyancyFoam` solver
+- Imply DeepFlame on Arm architecture platforms
+
+New in v1.4 (2024/8/22):
+- Reorganize the update order of mass, velocity and temperature for Lagrangian particles and introduce the liquidEvaporationSpalding model as new evaporation model.
+- Add source terms for liquid phase in the `dfLowMachFoam` solver
+- Incorporate Euler-Lagrangian source terms into the `dfHighSpeedFoam` solver to facilitate numerical simulations of two-phase supersonic reactive flows
+- Provide new flux schemes (including HLLC and HLLCP) for `dfHighSpeedFoam` solver (adopted from detonationFoam ) and do some modifications
+- Add lagrangianExtraFunctionObjects function (adopted from lagrangianExtraFunctionObjects ) in submodules to write to disk in the old positions file format
+- Introduce new cases to evaluate the accuracy of `dfHighSpeedFoam` solver and provide two-phase 1D/2D detonation cases
+- Add AUSMDV scheme as new flux scheme for `dfHighSpeedFoam`
+- add compatibility of neural network inference for chemical source terms with the Baidu PaddlePaddle framework
+- Adjust original examples referring to the modification of solvers
+- Add 2D aachenBomb case in test
+- Update PaddlePaddle options for DNN model development and inference in document homepage
+
 New in v1.3 (2023/12/30):
 - Complete the full-loop GPU implementation of the `dfLowMachFoam` solver, enabling efficient execution of all computations on GPU
 - Introduce `DF-ODENet` model, which utilizes sampling from canonical combustion simulation configurations to reduce training costs and improve computational efficiency
